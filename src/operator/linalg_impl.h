@@ -1433,7 +1433,7 @@ void linalg_getrf<cpu, DType>(const Tensor<cpu, 2, DType>& A, \
                               const Tensor<cpu, 1, int>& pivot, \
                               bool check_singular, Stream<cpu> *s) { \
   int ret(MXNET_LAPACK_##fname(MXNET_LAPACK_COL_MAJOR, A.size(1), A.size(0), \
-                               A.dptr_, A.stride_, pivot.dptr_)); \
+                               A.dptr_, A.stride_, (long long int *) pivot.dptr_)); \
   CHECK_GE(ret, 0) << #fname << " failed in lapack on cpu."; \
   if (check_singular) { \
     CHECK_EQ(ret, 0) << "the input matrix is non-convertible"; \
