@@ -659,7 +659,7 @@ inline void flip(int m, int n, DType *b, int ldb, DType *a, int lda) {
       return 1; \
     } else { \
       int info(0); \
-      prefix##gesv_(&n, &nrhs, a, &lda, ipiv, b, &ldb, &info); \
+      prefix##gesv_(&n, &nrhs, a, &lda, (long long int *) ipiv, b, &ldb, &info); \
       return info; \
     } \
   }
