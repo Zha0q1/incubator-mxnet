@@ -39,7 +39,7 @@ if(MKL_FOUND)
 endif()
 
 # ---[ Root folders
-set(INTEL_ROOT "/opt/intel" CACHE PATH "Folder contains intel libs")
+set(INTEL_ROOT "~/intel" CACHE PATH "Folder contains intel libs")
 
 
   # ---[ Options
@@ -52,7 +52,7 @@ set(INTEL_ROOT "/opt/intel" CACHE PATH "Folder contains intel libs")
   endif()
   cmake_dependent_option(MKL_USE_STATIC_LIBS "Use static libraries" ON "NOT MKL_USE_SINGLE_DYNAMIC_LIBRARY" OFF)
   cmake_dependent_option(MKL_MULTI_THREADED  "Use multi-threading"  ON "NOT MKL_USE_SINGLE_DYNAMIC_LIBRARY" OFF)
-  option(MKL_USE_ILP64 "Use ilp64 data model" OFF)
+  option(MKL_USE_ILP64 "Use ilp64 data model" ON)
   cmake_dependent_option(MKL_USE_CLUSTER "Use cluster functions" OFF "CMAKE_SIZEOF_VOID_P EQUAL 4" OFF)
 
   find_path(MKL_ROOT include/mkl.h PATHS $ENV{MKL_ROOT} ${INTEL_ROOT}/mkl
