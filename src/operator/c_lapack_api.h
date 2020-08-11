@@ -379,7 +379,7 @@ inline void flip(int m, int n, DType *b, int ldb, DType *a, int lda) {
   inline int MXNET_LAPACK_##prefix##getri(int matrix_layout, int n, dtype *a, int lda, \
                                           int *ipiv, dtype *work, int lwork) { \
     if (lwork != -1) { \
-      return LAPACKE_##prefix##getri(matrix_layout, n, a, lda, (index_t *)ipiv); \
+      return LAPACKE_##prefix##getri(matrix_layout, n, a, lda, (long long int *) ipiv); \
     } \
     *work = 0; \
     return 0; \
@@ -410,7 +410,7 @@ inline void flip(int m, int n, DType *b, int ldb, DType *a, int lda) {
                                           dtype *work, int lwork, int *iwork) { \
     if (lwork != -1) { \
       return LAPACKE_##prefix##gelsd(matrix_layout, m, n, nrhs, a, lda, b, ldb, \
-                                     s, rcond, (index_t *)rank); \
+                                     s, rcond, (long long int *) rank); \
     } \
     *work = 0; \
     *iwork = 0; \
