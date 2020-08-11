@@ -92,7 +92,7 @@ void linalg_solve<cpu, DType>(const Tensor<cpu, 2, DType>& A, \
   const int N = X.size(1), nrhs = X.size(0); \
   const int lda = (N == 0 ? 1 : N), ldx = (N == 0 ? 1 : N); \
   int res(MXNET_LAPACK_##fname(MXNET_LAPACK_COL_MAJOR, N, nrhs, \
-                               A.dptr_, lda, ipiv.dptr_, X.dptr_, ldx)); \
+                               A.dptr_, lda, (long long int *) ipiv.dptr_, X.dptr_, ldx)); \
   CHECK_LE(res, 0) << #fname << ": U(" << res << ", " << res \
     << ") is exactly zero. The factorization has been completed," \
     << "but the factor U is exactly singular, so the solution could not be computed."; \
