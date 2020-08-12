@@ -32,6 +32,8 @@
 #include "../common/cuda_utils.h"
 #include "mxnet_op.h"
 
+#include "../common/tensor_inspector.h"
+
 // Convenience functions.
 inline void linalg_check_batch_size(int A, int B, int C) {
   CHECK_EQ(A, B) << "Inconsistent batch size between arguments to linear algebra operator";
@@ -1635,6 +1637,14 @@ void linalg_batch_inverse<xpu, DType>(const Tensor<xpu, 3, DType>& A, \
     get_space_typed<xpu, 1, DType>(Shape1(workspace_size), s); \
   const Tensor<xpu, 1, int> pivot(reinterpret_cast<int *>(workspace.dptr_), \
                                   Shape1(A.size(1))); \
+
+  TensorInspector ti1(A, ctx.run_ctx);
+  TensorInspector ti2(B, ctx.run_ctx);
+  TensorInspector ti3(pivot, ctx.run_ctx);
+  ti1.interactive_print("A");
+  ti2.interactive_print("B");
+  ti3.interactive_print("pivot");
+
   const Tensor<xpu, 1, DType> work(reinterpret_cast<DType *>(pivot.dptr_ + pivot.MSize()), \
                                    Shape1(lwork)); \
   if (A.dptr_ != B.dptr_) Copy(A, B, s); \
