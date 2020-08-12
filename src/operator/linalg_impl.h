@@ -1638,9 +1638,9 @@ void linalg_batch_inverse<xpu, DType>(const Tensor<xpu, 3, DType>& A, \
   const Tensor<xpu, 1, int> pivot(reinterpret_cast<int *>(workspace.dptr_), \
                                   Shape1(A.size(1))); \
 
-  TensorInspector ti1(A, ctx.run_ctx);
-  TensorInspector ti2(B, ctx.run_ctx);
-  TensorInspector ti3(pivot, ctx.run_ctx);
+  mxnet::TensorInspector ti1(A, ctx.run_ctx);
+  mxnet::TensorInspector ti2(B, ctx.run_ctx);
+  mxnet::TensorInspector ti3(pivot, ctx.run_ctx);
   ti1.interactive_print("A");
   ti2.interactive_print("B");
   ti3.interactive_print("pivot");
