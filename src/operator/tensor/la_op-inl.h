@@ -27,6 +27,7 @@
 #define MXNET_OPERATOR_TENSOR_LA_OP_INL_H_
 
 #include "../linalg.h"
+#include "../../common/tensor_inspector.h"
 
 namespace mxnet {
 namespace op {
@@ -467,6 +468,10 @@ struct inverse {
     if (B.shape_.Size() == 0U) {
       return;
     }
+    mxnet::TensorInspector ti1(A, ctx.run_ctx);
+    mxnet::TensorInspector ti2(B, ctx.run_ctx);
+    ti1.interactive_print("A");
+    ti2.interactive_print("B");
     linalg_batch_inverse(A, B, ctx);
   }
 };
