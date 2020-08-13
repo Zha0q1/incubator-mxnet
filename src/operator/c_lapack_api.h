@@ -644,7 +644,8 @@ inline void flip(int m, int n, DType *b, int ldb, DType *a, int lda) {
     } else { \
       int info(0); \
       std::cout <<  "lda is " <<lda << std::endl;\
-      index_t lda_64 = lda;\
+      std::cout <<  "ipiv " << ipiv[0] << std::endl;\
+      std::cout <<  "ipiv " << ipiv[1] << std::endl;\
       prefix##getri_(&n, a, &lda_64, ipiv, work, &lwork, &info); \
       return info; \
     } \
