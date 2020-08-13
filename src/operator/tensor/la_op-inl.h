@@ -470,8 +470,8 @@ struct inverse {
     }
     mxnet::TensorInspector ti1(A, ctx.run_ctx);
     mxnet::TensorInspector ti2(B, ctx.run_ctx);
-    ti1.interactive_print("A");
-    ti2.interactive_print("B");
+    //ti1.interactive_print("A");
+    //ti2.interactive_print("B");
     linalg_batch_inverse(A, B, ctx);
   }
 };
