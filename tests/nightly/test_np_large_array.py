@@ -899,3 +899,42 @@ def test_index_update():
     B.backward()
     assert A.grad.shape == (2, INT_OVERFLOW)
     assert A.grad[0][0] == 0
+
+@use_np
+def test_layer_norm():
+    A = np.ones((2, INT_OVERFLOW))
+    A.attach_grad()
+    with mx.autograd.record():
+        B = npx.layer_norm(A, gamma=np.ones((2)), beta=np.zeros((2)), axis=0)
+    assert B.shape == (2, INT_OVERFLOW) 
+    assert B[0][0] == 0
+    B.backward()
+    assert A.grad.shape == (2, INT_OVERFLOW)
+    assert A.grad[0][0] == 0
+
+@use_np
+def test_dlpack():
+    A = np.ones((2, INT_OVERFLOW))
+    A[0][100] = 100
+    B = npx.to_dlpack_for_read(A)
+    assert type(B).__name__ == 'PyCapsule'
+    C = npx.from_dlpack(B)
+    assert type(C).__name__ == 'ndarray'
+    assert C.shape == (2, INT_OVERFLOW)
+    assert C[0][100] == 100
+    B = npx.to_dlpack_for_write(A)
+    assert type(B).__name__ == 'PyCapsule'
+    C = npx.from_dlpack(B)
+    C += 1
+    assert type(C).__name__ == 'ndarray'
+    assert C.shape == (2, INT_OVERFLOW)
+    assert C[0][100] == 101
+
+@use_np
+def test_save_load():
+    A = np.ones((2, INT_OVERFLOW), dtype='int8')
+    A[0][100] = 100
+    npx.save('my_tensor', A)
+    B = np.array(npx.load('my_tensor'))
+    assert B[0].shape == (2, INT_OVERFLOW)
+    assert B[0][0][100] == 100
