@@ -1585,6 +1585,20 @@ struct lcm : public mxnet_op::tunable {
     return DType(0.0f);
   }
 };
+
+struct gcd : public mxnet_op::tunable {
+  template<typename DType>
+  MSHADOW_XINLINE static typename enable_if<is_integral<DType>::value, DType>::type
+  Map(DType a, DType b) {
+    DType c = 250;
+    return c;
+  }
+  template<typename DType>
+  MSHADOW_XINLINE static typename enable_if<!is_integral<DType>::value, DType>::type
+  Map(DType a, DType b) {
+    return DType(0.0f);
+  }
+};
 #pragma GCC diagnostic pop
 
 }  // namespace mshadow_op
