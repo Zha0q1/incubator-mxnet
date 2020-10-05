@@ -691,6 +691,19 @@ def test_squeeze():
     assert out[-1, -1] == 1
     assert inp.grad.shape == inp.shape
     assert inp.grad[-1, -1, -1] == 1
+
+@use_np
+def test_tile():
+    inp = np.array([[0, 1],[2, 3]])
+    inp.attach_grad()
+    with mx.autograd.record():
+        out = np.tile(inp, (1, HALF_INT_OVERFLOW))
+        out.backward()
+    assert out.shape == (2, INT_OVERFLOW)
+    assert out[-1, -1] == 3
+    assert inp.grad.shape == inp.shape
+    assert inp.grad[-1, -1] == HALF_INT_OVERFLOW
+
 '''
                                      _               _
   _ _ _  _ _ __  _ __ _  _   _____ _| |_ ___ _ _  __(_)___ _ _
