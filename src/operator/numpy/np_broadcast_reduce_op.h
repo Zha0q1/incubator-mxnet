@@ -33,7 +33,6 @@
 #include "../tensor/broadcast_reduce_op.h"
 #include "../tensor/elemwise_binary_broadcast_op.h"
 #include "../../api/operator/op_utils.h"
-#include "../mshadow_op.h"
 
 namespace mxnet {
 namespace op {
@@ -432,7 +431,10 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
                         const std::vector<TBlob>& inputs,
                         const std::vector<OpReqType>& req,
                         const std::vector<TBlob>& outputs) {
-  
+  using namespace mshadow;
+  using namespace mshadow::expr;
+
+
   struct Num {
     float max;
     size_t idx;
