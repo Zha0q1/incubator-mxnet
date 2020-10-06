@@ -494,7 +494,7 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   
   TBlob out = outputs[0];
   int ndim = out.ndim();
-  Shape<dim> out_shape;
+  Shape<ndim> out_shape;
   for (int i=0; i<ndim; i++) {
     out_shape[i] = out.shape_[0];
   }
