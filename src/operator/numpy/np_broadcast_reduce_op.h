@@ -479,8 +479,8 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
                         const std::vector<TBlob>& inputs,
                         const std::vector<OpReqType>& req,
                         const std::vector<TBlob>& outputs) {
-  //using namespace mshadow;
-  //using namespace mshadow::expr;
+  using namespace mshadow;
+  using namespace mshadow::expr;
 
 
   struct Num {
@@ -489,8 +489,13 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   };
 
   mshadow::Stream<xpu> *s = ctx.get_stream<xpu>();
-  mshadow::Tensor<xpu, 2, Num> temp =
-      outputs[0].get_with_shape<xpu, 2, Num>(inputs[0].shape_, s);
+  // mshadow::Tensor<xpu, 2, Num> temp =
+  //    outputs[0].get_with_shape<xpu, 2, Num>(inputs[0].shape_, s);
+  
+  
+
+  Tensor<xpu, 1, Num> workspace =
+            ctx.requested[0].get_space_typed<xpu, 1, Num>(Shape1(100), s);
 
   NumpySearchAxisCompute<xpu, mshadow::red::maximum>(attrs,
     ctx, inputs, req, outputs);

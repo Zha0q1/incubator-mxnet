@@ -63,6 +63,10 @@ NNVM_REGISTER_OP(_npi_argmax)
 .set_attr<mxnet::FInferShape>("FInferShape", NumpyReduceAxisShape)
 .set_attr<nnvm::FInferType>("FInferType", ArgMinMaxType)
 .add_argument("data", "NDArray-or-Symbol", "The input")
+.set_attr<FResourceRequest>("FResourceRequest",
+  [](const NodeAttrs& attrs) {
+    return std::vector<ResourceRequest>{ResourceRequest::kTempSpace};
+  })
 .set_attr<FCompute>("FCompute<cpu>", NumpyArgMaxCompute<cpu>)
 .set_attr<nnvm::FGradient>("FGradient", MakeZeroGradNodes)
 .add_arguments(ReduceAxisParam::__FIELDS__());
