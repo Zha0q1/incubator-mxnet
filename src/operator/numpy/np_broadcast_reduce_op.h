@@ -438,7 +438,7 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   struct Num {
     float max;
     size_t idx;
-  }
+  };
 
   Stream<xpu> *s = ctx.get_stream<xpu>();
   Tensor<xpu, 2, Num> temp =
