@@ -33,6 +33,7 @@
 #include "../tensor/broadcast_reduce_op.h"
 #include "../tensor/elemwise_binary_broadcast_op.h"
 #include "../../api/operator/op_utils.h"
+#include "../mshadow_op.h"
 
 namespace mxnet {
 namespace op {
@@ -436,7 +437,7 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
     float max;
     size_t idx;
   }
-  
+
   Stream<xpu> *s = ctx.get_stream<xpu>();
   Tensor<xpu, 2, Num> temp =
       outputs[0].get_with_shape<xpu, 2, Num>(inputs[0].shape_, s);
