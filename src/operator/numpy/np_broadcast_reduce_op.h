@@ -425,7 +425,7 @@ void NumpyReduceAxesBoolCompute(const nnvm::NodeAttrs& attrs,
   ReduceAxesComputeBoolImpl<xpu, reducer, false, false, OP>(ctx, inputs, req, outputs, small);
 }
 
-template<xpu>
+template<typename xpu>
 void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
                         const OpContext& ctx,
                         const std::vector<TBlob>& inputs,
