@@ -499,12 +499,13 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
     out_shape[i] = out.shape_[i];
   }
   
-  Tensor<xpu, 2, float> workspace =
-            ctx.requested[0].get_space_typed<xpu, 2, float>(out_shape, s);
-
+  Tensor<xpu, 2, int64_t> workspace =
+            ctx.requested[0].get_space_typed<xpu, 2, int64_t>(out_shape, s);
+  
+  Tblob dummy = workspace;
   
   NumpySearchAxisCompute<xpu, mshadow::red::maximum>(attrs,
-    ctx, inputs, req, {worksapce}});
+    ctx, inputs, req, {dummy}});
 
 
 
