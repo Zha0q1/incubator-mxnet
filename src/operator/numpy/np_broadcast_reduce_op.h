@@ -425,30 +425,6 @@ void NumpyReduceAxesBoolCompute(const nnvm::NodeAttrs& attrs,
   ReduceAxesComputeBoolImpl<xpu, reducer, false, false, OP>(ctx, inputs, req, outputs, small);
 }
 
-template<typename xpu>
-void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
-                        const OpContext& ctx,
-                        const std::vector<TBlob>& inputs,
-                        const std::vector<OpReqType>& req,
-                        const std::vector<TBlob>& outputs) {
-  //using namespace mshadow;
-  //using namespace mshadow::expr;
-
-
-  struct Num {
-    float max;
-    size_t idx;
-  };
-
-  mshadow::Stream<xpu> *s = ctx.get_stream<xpu>();
-  mshadow::Tensor<xpu, 2, Num> temp =
-      outputs[0].get_with_shape<xpu, 2, Num>(inputs[0].shape_, s);
-
-  NumpySearchAxisCompute<xpu, mshadow::red::maximum>(attrs,
-    ctx, inputs, req, outputs);
-
-}
-
 template<typename xpu, typename reducer>
 void NumpySearchAxisCompute(const nnvm::NodeAttrs& attrs,
                             const OpContext& ctx,
@@ -495,6 +471,30 @@ void NumpySearchAxisCompute(const nnvm::NodeAttrs& attrs,
     CHECK(req[0] != kAddTo) << "AddTo is not supported";
     ASSIGN_DISPATCH(out, req[0], tcast<int64_t>(reduce_with_axis<reducer, true>(in, 1)));
   });
+}
+
+template<typename xpu>
+void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
+                        const OpContext& ctx,
+                        const std::vector<TBlob>& inputs,
+                        const std::vector<OpReqType>& req,
+                        const std::vector<TBlob>& outputs) {
+  //using namespace mshadow;
+  //using namespace mshadow::expr;
+
+
+  struct Num {
+    float max;
+    size_t idx;
+  };
+
+  mshadow::Stream<xpu> *s = ctx.get_stream<xpu>();
+  mshadow::Tensor<xpu, 2, Num> temp =
+      outputs[0].get_with_shape<xpu, 2, Num>(inputs[0].shape_, s);
+
+  NumpySearchAxisCompute<xpu, mshadow::red::maximum>(attrs,
+    ctx, inputs, req, outputs);
+
 }
 
 template<typename xpu, bool normalize = false>
