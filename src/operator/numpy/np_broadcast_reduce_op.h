@@ -496,7 +496,7 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   int ndim = out.ndim();
   Shape<2> out_shape;
   for (int i=0; i<2; i++) {
-    out_shape[i] = out.shape_[0];
+    out_shape[i] = out.shape_[i];
   }
 
   
@@ -504,6 +504,10 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
             ctx.requested[0].get_space_typed<xpu, 2, Num>(out_shape, s);
 
   
+  NumpySearchAxisCompute<xpu, mshadow::red::maximum>(attrs,
+    ctx, inputs, req, {worksapce}});
+
+
 
   NumpySearchAxisCompute<xpu, mshadow::red::maximum>(attrs,
     ctx, inputs, req, outputs);
