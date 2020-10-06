@@ -504,8 +504,8 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   
   Tblob dummy = workspace;
   
-  NumpySearchAxisCompute<xpu, mshadow::red::maximum>(attrs,
-    ctx, inputs, req, {dummy}});
+  //NumpySearchAxisCompute<xpu, mshadow::red::maximum>(attrs,
+  //  ctx, inputs, req, {dummy}});
 
 
 
