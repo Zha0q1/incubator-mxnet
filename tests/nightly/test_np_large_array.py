@@ -704,6 +704,87 @@ def test_tile():
     assert inp.grad.shape == inp.shape
     assert inp.grad[-1, -1] == HALF_INT_OVERFLOW
 
+@use_np
+def test_trace():
+    N = 2**16
+    inp1 = np.eye(N)
+    inp1.attach_grad()
+    with mx.autograd.record():
+        out1 = np.trace(inp1)
+        out1.backward()
+    assert out1 == N
+    assert inp1.grad.shape == inp1.shape
+    assert inp1.grad[0, 0] == 1 and inp1.grad[-1, -1] == 1
+    inp2 = np.zeros((2, INT_OVERFLOW))
+    inp2[-1, -1] = 1
+    inp2.attach_grad()
+    with mx.autograd.record():
+        out2 = np.trace(inp2, offset=INT_OVERFLOW-2)
+        out2.backward()
+    assert out2 == 1
+    assert inp2.grad.shape == inp2.shape
+    assert inp2.grad[0, -2] == 1 and inp2.grad[-1, -1] == 1
+
+@use_np
+def test_tri():
+    N = 2**16
+    data1 = np.tri(N)
+    assert data1.shape == (N, N)
+    assert data1[0, 0] == 1 and data1[-1, -1] == 1
+    assert data1[0, -1] == 0 and data1[-1, 0] == 1
+    data2 = np.tri(2, INT_OVERFLOW, INT_OVERFLOW-2)
+    assert data2.shape == (2, INT_OVERFLOW)
+    assert data2[0, -1] == 0 and data2[-1, -1] == 1
+
+@use_np
+def test_tril():
+    N = 2**16
+    inp1 = np.ones((N, N))
+    inp1.attach_grad()
+    with mx.autograd.record():
+        out1 = np.tril(inp1)
+        out1.backward()
+    assert out1.shape == (N, N)
+    print(out1)
+    assert out1[-1, -1] == 1 and out1[0, -1] == 0 and out1[-1, 0] == 1
+    assert inp1.grad.shape == inp1.shape
+    assert inp1.grad[-1, -1] == 1 and inp1.grad[0, -1] == 0 and \
+        inp1.grad[-1, 0] == 1
+    inp2 = np.ones((2, INT_OVERFLOW))
+    inp2[-1, -1] = 1
+    inp2.attach_grad()
+    with mx.autograd.record():
+        out2 = np.tril(inp2, k=INT_OVERFLOW-2)
+        out2.backward()
+    assert out2.shape == inp2.shape
+    assert out2[0, -1] == 0 and out2[-1, -1] == 1
+    assert inp2.grad.shape == inp2.shape
+    assert inp2.grad[0, -1] == 0 and inp2.grad[-1, -1] == 1
+
+@use_np
+def test_triu():
+    N = 2**16
+    inp1 = np.ones((N, N))
+    inp1.attach_grad()
+    with mx.autograd.record():
+        out1 = np.triu(inp1)
+        out1.backward()
+    assert out1.shape == (N, N)
+    assert out1[-1, -1] == 1 and out1[0, -1] == 1 and out1[-1, 0] == 0
+    assert inp1.grad.shape == inp1.shape
+    assert inp1.grad[-1, -1] == 1 and inp1.grad[0, -1] == 1 and \
+        inp1.grad[-1, 0] == 0
+    inp2 = np.ones((2, INT_OVERFLOW))
+    inp2[-1, -1] = 1
+    inp2.attach_grad()
+    with mx.autograd.record():
+        out2 = np.triu(inp2, k=INT_OVERFLOW-1)
+        out2.backward()
+    assert out2.shape == inp2.shape
+    assert out2[0, -1] == 1 and out2[-1, -1] == 0
+    assert inp2.grad.shape == inp2.shape
+    assert inp2.grad[0, -1] == 1 and inp2.grad[-1, -1] == 0
+
 '''
                                      _               _
   _ _ _  _ _ __  _ __ _  _   _____ _| |_ ___ _ _  __(_)___ _ _
