@@ -500,8 +500,8 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   }
 
   
-  Tensor<xpu, ndim, Num> workspace =
-            ctx.requested[0].get_space_typed<xpu, ndim, Num>(out_shape, s);
+  Tensor<xpu, 2, Num> workspace =
+            ctx.requested[0].get_space_typed<xpu, 2, Num>(out_shape, s);
 
   
 
