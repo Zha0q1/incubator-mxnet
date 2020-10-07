@@ -501,7 +501,7 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   // }
   int workspace_size = sizeof(int64_t) * out.shape_.Size();
   Tensor<xpu, 1, char> workspace = 
-            ctx.requested[0].get_space_typed<xpu, 1, int64_t>(Shape1(workspace_size), s);
+            ctx.requested[0].get_space_typed<xpu, 1, char>(Shape1(workspace_size), s);
   
   TBlob dummy = out;
   dummy.dptr_ = (int64_t*)workspace.dptr_;
