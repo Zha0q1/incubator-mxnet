@@ -499,7 +499,7 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   
   TBlob dummy = out;
   dummy.dptr_ = (int64_t*)workspace.dptr_;
-  
+  dummy.type_flag_ = 13; // kNum;
   
   dmlc::optional<mxnet::Tuple<int>> axis;
   //axis = mxnet::Tuple<int>(1, param.axis.value());
