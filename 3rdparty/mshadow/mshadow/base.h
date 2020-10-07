@@ -1405,7 +1405,7 @@ struct minimum {
       {__VA_ARGS__}                                           \
     }                                                         \
     break;                                                    \
-  case mshadow::kNum:                                         \
+  case 13:                                         \
     {                                                         \
       struct Num {                                            \
         float num;                                            \
