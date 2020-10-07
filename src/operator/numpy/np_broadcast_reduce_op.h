@@ -507,7 +507,7 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   small = NumpyReduceAxesShapeImpl(inputs[0].shape_, axis, true);
 
 
-  ReduceAxesComputeImpl<xpu, mshadow_op::argmax, true, false>(ctx, inputs, req, {dummy}, small);
+  //ReduceAxesComputeImpl<xpu, mshadow_op::argmax, true, false>(ctx, inputs, req, {dummy}, small);
   // NumpyReduceAxesCompute()
 
   /*
