@@ -507,7 +507,7 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   NumpySearchAxisCompute<xpu, mshadow::red::maximum>(attrs,
     ctx, inputs, req, {dummy});
 
-  for (int i=0; i<out_shape.Size; i++) {
+  for (int i=0; i<out_shape.Size(); i++) {
 
     std::cout << *(dummy.dptr<int64_t>() + i) << std::endl;
   }
