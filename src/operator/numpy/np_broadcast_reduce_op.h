@@ -491,14 +491,8 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   };
 
   mshadow::Stream<xpu> *s = ctx.get_stream<xpu>();
-  // mshadow::Tensor<xpu, 2, Num> temp =
-  //    outputs[0].get_with_shape<xpu, 2, Num>(inputs[0].shape_, s);
-  
   TBlob out = outputs[0];
-  //int ndim = out.ndim();
-  // for (int i=0; i<2; i++) {
-  //   out_shape[i] = out.shape_[i];
-  // }
+
   int workspace_size = sizeof(Num) * out.shape_.Size();
   Tensor<xpu, 1, char> workspace = 
             ctx.requested[0].get_space_typed<xpu, 1, char>(Shape1(workspace_size), s);
@@ -506,6 +500,12 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   TBlob dummy = out;
   dummy.dptr_ = (int64_t*)workspace.dptr_;
   
+  
+  const NumpyReduceAxesParam& param = nnvm::get<NumpyReduceAxesParam>(attrs.parsed);
+
+  // NumpyReduceAxesCompute()
+
+  /*
   NumpySearchAxisCompute<xpu, mshadow::red::maximum>(attrs,
     ctx, inputs, req, {dummy});
 
@@ -513,6 +513,7 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
 
     std::cout << *(dummy.dptr<int64_t>() + i) << std::endl;
   }
+  */
 
   NumpySearchAxisCompute<xpu, mshadow::red::maximum>(attrs,
     ctx, inputs, req, outputs);
