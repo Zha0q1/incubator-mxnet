@@ -550,18 +550,21 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   const TBlob in_data = inputs[0].reshape(src_shape);
   const TBlob out_data = dummy.reshape(dst_shape);
   BROADCAST_NDIM_SWITCH(dst_shape.ndim(), NDim, {
-    size_t workspace_size = broadcast::ReduceWorkspaceSize(
-        s, out_data.shape_, req[0], in_data.shape_, sizeof(OType));
-    Tensor<xpu, 1, char> workspace =
-        ctx.requested[0].get_space_typed<xpu, 1, char>(Shape1(workspace_size), s);
+    //size_t workspace_size = broadcast::ReduceWorkspaceSize(
+    //    s, out_data.shape_, req[0], in_data.shape_, sizeof(OType));
+    //Tensor<xpu, 1, char> workspace =
+    //    ctx.requested[0].get_space_typed<xpu, 1, char>(Shape1(workspace_size), s);
 
     if (req[0] == kNullOp) return;
     Shape<NDim> rshape, rstride;
-    diffuuu(out_data.shape_.get<NDim>(), in_data.shape_.get<NDim>(), &rshape, &rstride);
-    //size_t N = out_data.shape_.Size(), M = rshape.Size();
+    //diffuuu(out_data.shape_.get<NDim>(), in_data.shape_.get<NDim>(), &rshape, &rstride);
+    size_t N = out_data.shape_.Size(), M = rshape.Size();
     //seq_reduce_compute<mshadow_op::argmax, NDim, OType, DType, OType, op::mshadow_op::identity>(
     //  N, M, req[0] == kAddTo, in_data.dptr<DType>(), out_data.dptr<OType>(),
     //  in_data.shape_.get<NDim>(), out_data.shape_.get<NDim>(), rshape, rstride);
+    
+    
+    
     //broadcast::Reduce<mshadow_op::argmax, NDim, DType, op::mshadow_op::identity, false>(
     //    s, out_data, req[0], workspace, in_data);
   });
