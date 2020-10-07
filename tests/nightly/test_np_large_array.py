@@ -665,6 +665,7 @@ def test_subtract():
     assert B.grad.shape == (INT_OVERFLOW, 2)
     assert B.grad[0][0] == -1
 
+
 @use_np
 def test_rot90():
     inp = np.zeros((1, 2, INT_OVERFLOW))
@@ -678,9 +679,9 @@ def test_rot90():
     assert inp.grad.shape == inp.shape
     assert inp.grad[-1, -1, -1] == 1
 
+
 @use_np
 def test_squeeze():
-    INT_OVERFLOW = 2**31
     inp = np.zeros((2, 1, INT_OVERFLOW))
     inp[-1, -1, -1] = 1
     inp.attach_grad()
@@ -691,6 +692,7 @@ def test_squeeze():
     assert out[-1, -1] == 1
     assert inp.grad.shape == inp.shape
     assert inp.grad[-1, -1, -1] == 1
+
 
 @use_np
 def test_tile():
@@ -703,6 +705,7 @@ def test_tile():
     assert out[-1, -1] == 3
     assert inp.grad.shape == inp.shape
     assert inp.grad[-1, -1] == HALF_INT_OVERFLOW
+
 
 @use_np
 def test_trace():
@@ -725,6 +728,7 @@ def test_trace():
     assert inp2.grad.shape == inp2.shape
     assert inp2.grad[0, -2] == 1 and inp2.grad[-1, -1] == 1
 
+
 @use_np
 def test_tri():
     N = 2**16
@@ -736,6 +740,7 @@ def test_tri():
     assert data2.shape == (2, INT_OVERFLOW)
     assert data2[0, -1] == 0 and data2[-1, -1] == 1
 
+
 @use_np
 def test_tril():
     N = 2**16
@@ -745,7 +750,6 @@ def test_tril():
         out1 = np.tril(inp1)
         out1.backward()
     assert out1.shape == (N, N)
-    print(out1)
     assert out1[-1, -1] == 1 and out1[0, -1] == 0 and out1[-1, 0] == 1
     assert inp1.grad.shape == inp1.shape
     assert inp1.grad[-1, -1] == 1 and inp1.grad[0, -1] == 0 and \
@@ -760,6 +764,7 @@ def test_tril():
     assert out2[0, -1] == 0 and out2[-1, -1] == 1
     assert inp2.grad.shape == inp2.shape
     assert inp2.grad[0, -1] == 0 and inp2.grad[-1, -1] == 1
+
 
 @use_np
 def test_triu():
@@ -785,6 +790,92 @@ def test_triu():
     assert inp2.grad.shape == inp2.shape
     assert inp2.grad[0, -1] == 1 and inp2.grad[-1, -1] == 0
 
+
+@use_np
+def test_transpose():
+    inp = np.zeros((1, 2, INT_OVERFLOW))
+    inp[0, 0, -1] = 1
+    inp.attach_grad()
+    with mx.autograd.record():
+        out = np.transpose(inp, (2, 0, 1))
+        out.backward()
+    assert out.shape == (INT_OVERFLOW, 1, 2)
+    assert out[-1, 0, 0] == 1
+    assert inp.grad.shape == inp.shape
+    assert inp.grad[-1, -1, -1] == 1
+
+
+@use_np
+def test_trunc():
+    inp = np.zeros((2, INT_OVERFLOW))
+    inp[0, -1], inp[1, -1] = 1.9, -1.9
+    inp.attach_grad()
+    with mx.autograd.record():
+        out = np.trunc(inp)
+        out.backward()
+    assert out.shape == inp.shape
+    assert out[0, -1] == 1 and out[1, -1] == -1
+    assert inp.grad.shape == inp.shape
+    assert inp.grad[-1, -1] == 0
+
+
+@use_np
+def test_stack():
+    inp1 = np.zeros((INT_OVERFLOW))
+    inp2 = np.ones((INT_OVERFLOW))
+    inp1.attach_grad()
+    inp2.attach_grad()
+    with mx.autograd.record():
+        out1 = np.stack([inp1, inp2])
+        out1.backward()
+    assert out1.shape == (2, INT_OVERFLOW)
+    assert out1[0, -1] == 0 and out1[1, -1] == 1
+    assert inp1.grad.shape == inp1.shape
+    assert inp1.grad[-1] == 1
+    with mx.autograd.record():
+        out2 = np.stack([inp1, inp2], axis=1)
+        out2.backward()
+    assert out2.shape == (INT_OVERFLOW, 2)
+    assert out2[-1, 0] == 0 and out2[-1, 1] == 1
+    assert inp2.grad.shape == inp2.shape
+    assert inp2.grad[-1] == 1
+
+
+@use_np
+def test_dstack():
+    inp1 = np.zeros((INT_OVERFLOW, 1))
+    inp2 = np.ones((INT_OVERFLOW, 1))
+    inp1.attach_grad()
+    inp2.attach_grad()
+    with mx.autograd.record():
+        out = np.dstack((inp1, inp2))
+        out.backward()
+    assert out.shape == (INT_OVERFLOW, 1, 2)
+    assert out[0, -1, 0] == 0 and out[0, -1, 1] == 1
+    assert inp1.grad.shape == inp1.shape
+    assert inp1.grad[-1, -1] == 1
+
+
+@use_np
+def test_hstack():
+    inp1 = np.zeros((INT_OVERFLOW, 1))
+    inp2 = np.ones((INT_OVERFLOW, 1))
+    inp1.attach_grad()
+    inp2.attach_grad()
+    with mx.autograd.record():
+        out1 = np.hstack((inp1, inp2))
+        out1.backward()
+    assert out1.shape == (INT_OVERFLOW, 2)
+    assert out1[-1, 0] == 0 and out1[-1, 1] == 1
+    assert inp1.grad.shape == inp1.shape
+    assert inp1.grad[-1, -1] == 1
+    with mx.autograd.record():
+        out2 = np.hstack((inp1.flatten(), inp2.flatten()))
+        out2.backward()
+    assert out2.shape == (DOUBLE_INT_OVERFLOW, )
+    assert out2[INT_OVERFLOW-1] == 0 and out2[-1] == 1
+    assert inp2.grad.shape == inp2.shape
+    assert inp2.grad[-1, -1] == 1
 '''
                                      _               _
   _ _ _  _ _ __  _ __ _  _   _____ _| |_ ___ _ _  __(_)___ _ _
