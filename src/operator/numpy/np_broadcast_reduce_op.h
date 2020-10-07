@@ -499,7 +499,7 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   // for (int i=0; i<2; i++) {
   //   out_shape[i] = out.shape_[i];
   // }
-  int workspace_size = sizeof(int64_t) * out.shape_.Size();
+  int workspace_size = sizeof(Num) * out.shape_.Size();
   Tensor<xpu, 1, char> workspace = 
             ctx.requested[0].get_space_typed<xpu, 1, char>(Shape1(workspace_size), s);
   
