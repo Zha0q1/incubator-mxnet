@@ -486,7 +486,7 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   std::cout<<"aaaaa" <<std::endl;
   
   struct Num {
-    float max;
+    float num;
     size_t idx;
   };
 
