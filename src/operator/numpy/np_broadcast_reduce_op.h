@@ -433,6 +433,7 @@ void NumpySearchAxisCompute(const nnvm::NodeAttrs& attrs,
                             const std::vector<TBlob>& outputs) {
   using namespace mshadow;
   using namespace mshadow::expr;
+  std::cout<<"bbb" <<std::endl;
   const ReduceAxisParam& param = nnvm::get<ReduceAxisParam>(attrs.parsed);
   Stream<xpu> *s = ctx.get_stream<xpu>();
   int axis = inputs[0].ndim();
@@ -447,7 +448,7 @@ void NumpySearchAxisCompute(const nnvm::NodeAttrs& attrs,
     input = TBlob(input.dptr_, shape_2d, input.dev_mask(), input.type_flag_, input.dev_id());
     axis = 1;
   }
-
+  std::cout<<"ccc" <<std::endl;
   axis = CheckAxis(axis, input.shape_.ndim());
   if (inputs[0].shape_.ndim() != 0) {
     if (param.axis.has_value()) {
@@ -460,7 +461,7 @@ void NumpySearchAxisCompute(const nnvm::NodeAttrs& attrs,
       CHECK_NE(inputs[0].shape_.Size(), 0U) << "attempt to search an empty sequence";
     }
   }
-
+  std::cout<<"ddd" <<std::endl;
   if (input.shape_.Size() == 0U) return;  // zero-size tensor
   mxnet::TShape shape = AxisShapeCompact(input.shape_, &axis, false);
   MSHADOW_TYPE_SWITCH(inputs[0].type_flag_, DType, {
@@ -481,8 +482,9 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
                         const std::vector<TBlob>& outputs) {
   using namespace mshadow;
   using namespace mshadow::expr;
-
-
+  
+  std::cout<<"aaaaa" <<std::endl;
+  
   struct Num {
     float max;
     size_t idx;
