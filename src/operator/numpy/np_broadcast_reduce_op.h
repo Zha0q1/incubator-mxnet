@@ -505,6 +505,32 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   TShape small;
   small = NumpyReduceAxesShapeImpl(inputs[0].shape_, axis, true);
 
+  
+
+
+
+
+
+  mxnet::TShape src_shape, dst_shape;
+  BroadcastReduceShapeCompact(inputs[0].shape_, small, &src_shape, &dst_shape);
+
+  typedef float DType;
+  typedef Num OType;
+
+
+  const TBlob in_data = inputs[0].reshape(src_shape);
+  const TBlob out_data = dummy.reshape(dst_shape);
+  BROADCAST_NDIM_SWITCH(dst_shape.ndim(), NDim, {
+    size_t workspace_size = broadcast::ReduceWorkspaceSize(
+        s, out_data.shape_, req[0], in_data.shape_, sizeof(OType));
+    Tensor<xpu, 1, char> workspace =
+        ctx.requested[0].get_space_typed<xpu, 1, char>(Shape1(workspace_size), s);
+    broadcast::Reduce<mshadow_op::argmax, NDim, DType, OP, false>(
+        s, out_data, req[0], workspace, in_data);
+  });
+
+
+
 
   // ReduceAxesComputeImpl<xpu, mshadow_op::argmax, true, false>(ctx, inputs, req, {dummy}, small);
   // NumpyReduceAxesCompute()
