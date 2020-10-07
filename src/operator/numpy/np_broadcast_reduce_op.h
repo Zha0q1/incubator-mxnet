@@ -474,6 +474,34 @@ void NumpySearchAxisCompute(const nnvm::NodeAttrs& attrs,
   });
 }
 
+
+
+inline int diff(const TShape& small, const TShape& big,
+                TShape* dims, TShape* stride) {
+  int ndim = small.ndim();
+  int mdim = 0;
+  #pragma unroll
+  for (int i = 0; i < ndim; ++i) {
+    mdim += small[i] != big[i];
+    (*dims)[i] = (*stride)[i] = 1;
+  }
+
+  index_t s = 1;
+  #pragma unroll
+  for (int i = ndim - 1, j = mdim; i >= 0; --i) {
+    if (small[i] != big[i]) {
+      --j;
+      (*stride)[j] = s;
+      (*dims)[j] = big[i];
+    }
+    s *= big[i];
+  }
+  return mdim;
+}
+
+
+
+
 template<typename xpu>
 void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
                         const OpContext& ctx,
