@@ -502,7 +502,7 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   
   
   dmlc::optional<mxnet::Tuple<int>> axis;
-  //axis = dmlc::optional<mxnet::Tuple<int>>(mxnet::Tuple<int>(1, param.axis.value()));
+  axis = mxnet::Tuple<int>(1, param.axis.value());
   TShape small;
   small = NumpyReduceAxesShapeImpl(inputs[0].shape_, axis, true);
 
