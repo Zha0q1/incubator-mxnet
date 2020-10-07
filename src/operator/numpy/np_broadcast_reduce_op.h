@@ -541,7 +541,7 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
 
 
   mxnet::TShape src_shape, dst_shape;
-  BroadcastReduceShapeCompact(inputs[0].shape_, small, &src_shape, &dst_shape);
+  // BroadcastReduceShapeCompact(inputs[0].shape_, small, &src_shape, &dst_shape);
 
   typedef float DType;
   typedef Num OType;
