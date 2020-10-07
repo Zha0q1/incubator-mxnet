@@ -482,7 +482,7 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
                         const std::vector<TBlob>& outputs) {
   using namespace mshadow;
   using namespace mshadow::expr;
-  
+  const ReduceAxisParam& param = nnvm::get<ReduceAxisParam>(attrs.parsed);
   std::cout<<"aaaaa" <<std::endl;
   
   struct Num {
@@ -501,7 +501,10 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   dummy.dptr_ = (int64_t*)workspace.dptr_;
   
   
-  const NumpyReduceAxesParam& param = nnvm::get<NumpyReduceAxesParam>(attrs.parsed);
+  dmlc::optional<mxnet::Tuple<int>> axis =
+      dmlc::optional<mxnet::Tuple<int>>(mxnet::Tuple<int>(1, param.axis.value()));
+  TShape small;
+  small = NumpyReduceAxesShapeImpl(inputs[0].shape_, axis, true);
 
   // NumpyReduceAxesCompute()
 
