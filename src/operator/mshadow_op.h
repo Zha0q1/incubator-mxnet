@@ -1579,7 +1579,7 @@ struct argmax {
    */
   template<typename DType>
   MSHADOW_XINLINE static void SetInitValue(DType &initv) { // NOLINT(*)
-    initv.num = limits::PosInfValue<float>();
+    initv.num = -1000000; //TODO zhaoqi
   }
   /*!
    *\brief set the initial value during reduction
