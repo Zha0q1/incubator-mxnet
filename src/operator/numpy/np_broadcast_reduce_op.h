@@ -514,8 +514,8 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
     std::cout << *(dummy.dptr<int64_t>() + i) << std::endl;
   }
 
-  //NumpySearchAxisCompute<xpu, mshadow::red::maximum>(attrs,
-    //ctx, inputs, req, outputs);
+  NumpySearchAxisCompute<xpu, mshadow::red::maximum>(attrs,
+    ctx, inputs, req, outputs);
 
 }
 
