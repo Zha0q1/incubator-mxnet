@@ -476,9 +476,11 @@ void NumpySearchAxisCompute(const nnvm::NodeAttrs& attrs,
 
 
 
-inline int diff(const TShape& small, const TShape& big,
-                TShape* dims, TShape* stride) {
-  int ndim = small.ndim();
+template<int ndim>
+MSHADOW_XINLINE int diff(const Shape<ndim>& small,
+                         const Shape<ndim>& big,
+                         Shape<ndim>* dims,
+                         Shape<ndim>* stride) {
   int mdim = 0;
   #pragma unroll
   for (int i = 0; i < ndim; ++i) {
@@ -498,7 +500,6 @@ inline int diff(const TShape& small, const TShape& big,
   }
   return mdim;
 }
-
 
 
 
