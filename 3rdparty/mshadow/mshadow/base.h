@@ -348,7 +348,8 @@ enum TypeFlag {
   kUint16 = 9,
   kUint32 = 10,
   kUint64 = 11,
-  kBfloat16 = 12
+  kBfloat16 = 12,
+  kNum = 13
 };
 
 template<typename DType>
@@ -1401,6 +1402,16 @@ struct minimum {
   case mshadow::kBool:                                        \
     {                                                         \
       typedef bool DType;                                     \
+      {__VA_ARGS__}                                           \
+    }                                                         \
+    break;                                                    \
+  case mshadow::kNum:                                         \
+    {                                                         \
+      struct Num {                                            \
+        float num;                                            \
+        size_t idx;                                           \
+      };                                                      \
+      typedef Num DType;                                      \
       {__VA_ARGS__}                                           \
     }                                                         \
     break;                                                    \
