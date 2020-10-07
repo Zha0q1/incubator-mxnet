@@ -525,8 +525,8 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
         s, out_data.shape_, req[0], in_data.shape_, sizeof(OType));
     Tensor<xpu, 1, char> workspace =
         ctx.requested[0].get_space_typed<xpu, 1, char>(Shape1(workspace_size), s);
-    broadcast::Reduce<mshadow_op::argmax, NDim, DType, op::mshadow_op::identity, false>(
-        s, out_data, req[0], workspace, in_data);
+    //broadcast::Reduce<mshadow_op::argmax, NDim, DType, op::mshadow_op::identity, false>(
+    //    s, out_data, req[0], workspace, in_data);
   });
 
 
