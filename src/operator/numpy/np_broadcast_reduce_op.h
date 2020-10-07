@@ -477,10 +477,10 @@ void NumpySearchAxisCompute(const nnvm::NodeAttrs& attrs,
 
 
 template<int ndim>
-MSHADOW_XINLINE int diffuuu(const Shape<ndim>& small,
-                         const Shape<ndim>& big,
-                         Shape<ndim>* dims,
-                         Shape<ndim>* stride) {
+MSHADOW_XINLINE int diffuuu(const mshadow::Shape<ndim>& small,
+                         const mshadow::Shape<ndim>& big,
+                         mshadow::Shape<ndim>* dims,
+                         mshadow::Shape<ndim>* stride) {
   int mdim = 0;
   #pragma unroll
   for (int i = 0; i < ndim; ++i) {
