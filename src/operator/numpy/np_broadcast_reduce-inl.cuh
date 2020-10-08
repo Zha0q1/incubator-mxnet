@@ -29,10 +29,10 @@
 #include "../tensor/broadcast_reduce-inl.cuh"
 
 using namespace mshadow::cuda;
-
+using namespace mshadow;
 
 template<typename Reducer, int NDim, typename DType, typename OType>
-void NumpyArgMinMaxReduce(mshadow::Stream<gpu> *s, const TBlob& in_data, const TBlob& out_data,
+void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out_data,
                           const Tensor<cpu, 1, char>& workspace) {
   std::cout << "dududu" << std::endl;
   
