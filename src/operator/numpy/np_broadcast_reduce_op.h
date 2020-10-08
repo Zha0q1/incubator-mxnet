@@ -509,9 +509,20 @@ struct argmax_parse {
   }
 };
 
+template <typename Reducer, int NDim, typename DType, typename OType>
+void NumpyArgMinMaxCPUReduce(const TBlob& in_data, const TBlob& out_data) {
+  Shape<NDim> rshape, rstride;
+  diffuuu(out_data.shape_.get<NDim>(), in_data.shape_.get<NDim>(), &rshape, &rstride);
+  size_t N = out_data.shape_.Size(), M = rshape.Size();
+  broadcast::seq_reduce_compute<Reducer, NDim, OType, DType, OType, mxnet::op::mshadow_op::myOp<DType, OType>, true> (
+    N, M, false, in_data.dptr<DType>(), static_cast<OType*>(out_data.dptr_),
+    in_data.shape_.get<NDim>(), out_data.shape_.get<NDim>(), rshape, rstride);
+}
+
+
 
 template<typename xpu>
-void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
+void NumpyArgMinMaxCompute(const nnvm::NodeAttrs& attrs,
                         const OpContext& ctx,
                         const std::vector<TBlob>& inputs,
                         const std::vector<OpReqType>& req,
@@ -559,9 +570,9 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   mxnet::TShape src_shape, dst_shape;
   BroadcastReduceShapeCompact(inputs[0].shape_, small, &src_shape, &dst_shape);
 
+
   typedef float DType;
   typedef mxnet::op::mshadow_op::Num<size_t, float> OType;
-
 
   const TBlob in_data = inputs[0].reshape(src_shape);
   const TBlob out_data = dummy.reshape(dst_shape);
@@ -571,16 +582,17 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
     //Tensor<xpu, 1, char> workspace =
     //    ctx.requested[0].get_space_typed<xpu, 1, char>(Shape1(workspace_size), s);
 
-   
+    NumpyArgMinMaxCPUReduce<mshadow_op::argmax, NDim, Dtype, OType>(in_data, out_data);
 
     //cpu version
-    if (req[0] == kNullOp) return;
-    Shape<NDim> rshape, rstride;
-    diffuuu(out_data.shape_.get<NDim>(), in_data.shape_.get<NDim>(), &rshape, &rstride);
-    size_t N = out_data.shape_.Size(), M = rshape.Size();
-    broadcast::seq_reduce_compute<mshadow_op::argmax, NDim, OType, DType, OType, mxnet::op::mshadow_op::myOp<DType, OType>, true> (
-      N, M, req[0] == kAddTo, in_data.dptr<DType>(), static_cast<OType*>(out_data.dptr_),
-      in_data.shape_.get<NDim>(), out_data.shape_.get<NDim>(), rshape, rstride);
+
+    // if (req[0] == kNullOp) return;
+    // Shape<NDim> rshape, rstride;
+    // diffuuu(out_data.shape_.get<NDim>(), in_data.shape_.get<NDim>(), &rshape, &rstride);
+    // size_t N = out_data.shape_.Size(), M = rshape.Size();
+    // broadcast::seq_reduce_compute<mshadow_op::argmax, NDim, OType, DType, OType, mxnet::op::mshadow_op::myOp<DType, OType>, true> (
+    //   N, M, req[0] == kAddTo, in_data.dptr<DType>(), static_cast<OType*>(out_data.dptr_),
+    //   in_data.shape_.get<NDim>(), out_data.shape_.get<NDim>(), rshape, rstride);
     
     
     
