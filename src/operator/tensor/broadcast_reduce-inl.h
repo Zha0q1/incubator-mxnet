@@ -289,7 +289,7 @@ MSHADOW_XINLINE void seq_reduce_assign(const index_t idx, const size_t M, const 
     }
       
 
-    Reducer::Reduce(val, , residual);
+    Reducer::Reduce(val, temp, residual);
   }
   Reducer::Finalize(val, residual);
   assign(&small[idx], addto, OType(val));
