@@ -267,7 +267,7 @@ MSHADOW_XINLINE void binary_broadcast_assign(const index_t idx, const bool addto
   assign(&out[idx], addto, OP::Map(lhs[j], rhs[k]));
 }
 
-template<typename Reducer, int ndim, typename AType, typename DType, typename OType, typename OP>
+template<typename Reducer, int ndim, typename AType, typename DType, typename OType, typename OP, bool use_index = false>
 MSHADOW_XINLINE void seq_reduce_assign(const index_t idx, const size_t M, const bool addto,
                                        const DType* __restrict big, OType *small,
                                        const Shape<ndim>& bshape, const Shape<ndim>& sshape,
@@ -312,14 +312,14 @@ void BinaryBroadcastComputeImpl(Stream<cpu> *s, const OpReqType req,
                     lhs.dptr<DType>(), rhs.dptr<DType>(), out.dptr<DType>());
 }
 
-template<typename Reducer, int ndim, typename AType, typename DType, typename OType, typename OP>
+template<typename Reducer, int ndim, typename AType, typename DType, typename OType, typename OP, bool use_index = false>
 void seq_reduce_compute(const size_t N, const size_t M, const bool addto,
                         const DType *big, OType *small, const Shape<ndim> bshape,
                         const Shape<ndim> sshape, const Shape<ndim> rshape,
                         const Shape<ndim> rstride) {
   #pragma omp parallel for num_threads(engine::OpenMP::Get()->GetRecommendedOMPThreadCount())
   for (index_t idx = 0; idx < static_cast<index_t>(N); ++idx) {
-    seq_reduce_assign<Reducer, ndim, AType, DType, OType, OP>(idx, M, addto, big, small,
+    seq_reduce_assign<Reducer, ndim, AType, DType, OType, OP, use_index>(idx, M, addto, big, small,
         bshape, sshape, rshape, rstride);
   }
 }
