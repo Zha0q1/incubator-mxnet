@@ -134,7 +134,7 @@ struct Num {
 };
 
 struct myOp : public mxnet_op::tunable { 
-  template<typename DType, typename IType> 
+  template<typename DType> 
   MSHADOW_XINLINE static Num Map(DType a) {
     Num temp;
     temp.num = a;
