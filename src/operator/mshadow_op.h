@@ -1562,12 +1562,18 @@ struct argmax {
   /*! \brief do reduction into dst */
   template<typename AType, typename DType>
   MSHADOW_XINLINE static void Reduce(volatile AType& dst,  volatile DType src) { // NOLINT(*)
-    if (dst.num < src.num) dst.num = src.num;
+    if (dst.num < src.num) {
+      dst.num = src.num;
+      dst.idx = src.idx;
+    }
   }
   /*! \brief do stable reduction into dst */
   template<typename AType, typename DType>
   MSHADOW_XINLINE static void Reduce(volatile AType& dst,  volatile DType src, volatile DType& residual) { // NOLINT(*)
-    if (dst.num < src.num) dst.num = src.num;
+    if (dst.num < src.num) {
+      dst.num = src.num;
+      dst.idx = src.idx;
+    }
   }
   /*! \brief combine the results of two reducers */
   template<typename DType>
