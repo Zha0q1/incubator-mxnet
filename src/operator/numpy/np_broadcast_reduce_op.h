@@ -529,9 +529,9 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   TBlob dummy = out;
   dummy.dptr_ = (int64_t*)workspace.dptr_;
   
-  
-  mxnet::Tuple<int> axes_(1, param.axis.value());
-  dmlc::optional<mxnet::Tuple<int>> axes(axes_);
+  dmlc::optional<mxnet::Tuple<int>> axes;
+  mxnet::Tuple<int> t({param.axis.value()});
+  axes = dmlc::optional<mxnet::Tuple<int>>(t);
   //axes.value().SetDim(1);
   //axes.value()[0] = param.axis;
   TShape small;
