@@ -131,6 +131,8 @@ MXNET_UNARY_MATH_OP_NC(identity, a);
 struct Num {
   float num;
   size_t idx;
+
+  
 };
 
 struct myOp : public mxnet_op::tunable { 
@@ -1557,22 +1559,20 @@ struct argmax {
   /*! \brief do reduction into dst */
   template<typename AType, typename DType>
   MSHADOW_XINLINE static void Reduce(volatile AType& dst,  volatile DType src) { // NOLINT(*)
-    if (dst < src.num) dst = src.num;
+    if (dst.num < src.num) dst.num = src.num;
   }
   /*! \brief do stable reduction into dst */
   template<typename AType, typename DType>
   MSHADOW_XINLINE static void Reduce(volatile AType& dst,  volatile DType src, volatile DType& residual) { // NOLINT(*)
-    Reduce(dst, src);
+    if (dst.num < src.num) dst.num = src.num;
   }
   /*! \brief combine the results of two reducers */
   template<typename DType>
   MSHADOW_XINLINE static void Merge(volatile DType& dst_val, volatile DType& src_val) { // NOLINT(*)
-    Reduce(dst_val, src_val);
   }
   /*! \brief combine the results of two reducers */
   template<typename DType>
   MSHADOW_XINLINE static void Merge(volatile DType& dst_val, volatile DType& dst_residual, volatile DType& src_val, volatile DType& src_residual) { // NOLINT(*)
-    Reduce(dst_val, src_val);
   }
   /*! \brief finalize reduction */
   template<typename DType>
