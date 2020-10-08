@@ -128,7 +128,7 @@ using std::is_integral;
 
 MXNET_UNARY_MATH_OP_NC(identity, a);
 
-template <typname IType, typename DType>
+template <typename IType, typename DType>
 struct Num {
   //size_t idx;
   //float num;
