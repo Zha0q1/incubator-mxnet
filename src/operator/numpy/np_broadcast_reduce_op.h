@@ -31,7 +31,6 @@
 #include "../../common/utils.h"
 #include "../nn/moments-inl.h"
 #include "../tensor/broadcast_reduce_op.h"
-#include "../tensor/broadcast_reduce-inl.h"
 #include "../tensor/elemwise_binary_broadcast_op.h"
 #include "../../api/operator/op_utils.h"
 
