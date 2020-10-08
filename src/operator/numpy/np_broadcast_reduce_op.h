@@ -508,7 +508,7 @@ struct argmax_parse {
   MSHADOW_XINLINE static void Map(index_t i,
                                   OType* out_data,
                                   const DType* in_data) {
-    out_data[i] == in_data[i].idx;
+    out_data[i] = in_data[i].idx;
   }
 };
 
