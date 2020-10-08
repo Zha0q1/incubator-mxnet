@@ -538,7 +538,7 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   small = NumpyReduceAxesShapeImpl(inputs[0].shape_, axes, true);
 
   for (int i=0; i<small.ndim(); i++)
-    std:: cout<< "ddd" << i << std::endl;
+    std:: cout<< "ddd" << small[i] << std::endl;
   
   std::cout<< "1111111" <<std::endl;
   
