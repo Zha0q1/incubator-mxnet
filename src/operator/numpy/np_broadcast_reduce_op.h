@@ -503,6 +503,16 @@ MSHADOW_XINLINE int diffuuu(const mshadow::Shape<ndim>& small,
 
 
 
+struct argmax_parse {
+  template <typename DType, OType>
+  MSHADOW_XINLINE static void Map(index_t i,
+                                  OType* out_data,
+                                  const DType* in_data) {
+    out_data[i] == in_data[i].idx;
+  }
+};
+
+
 template<typename xpu>
 void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
                         const OpContext& ctx,
