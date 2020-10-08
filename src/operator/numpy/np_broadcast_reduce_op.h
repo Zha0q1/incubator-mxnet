@@ -567,7 +567,7 @@ void NumpyArgMinMaxCompute(const nnvm::NodeAttrs& attrs,
     Tensor<xpu, 1, char> workspace =
        ctx.requested[0].get_space_typed<xpu, 1, char>(Shape1(workspace_size), s);
 
-    NumpyArgMinMaxReduce<mshadow_op::argmax, NDim, DType, OType>(s, in_data, out_data);
+    NumpyArgMinMaxReduce<mshadow_op::argmax, NDim, DType, OType>(s, in_data, out_data, workspace);
 
     //cpu version
 
