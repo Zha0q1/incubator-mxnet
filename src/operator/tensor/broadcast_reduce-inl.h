@@ -268,32 +268,6 @@ MSHADOW_XINLINE void binary_broadcast_assign(const index_t idx, const bool addto
 }
 
 
-
-template<typename Reducer, int ndim, typename AType, typename DType, typename OType, typename OP, bool use_index = false>
-MSHADOW_XINLINE void seq_reduce_assign(const index_t idx, const size_t M, const bool addto,
-                                       const DType* __restrict big, OType *small,
-                                       const Shape<ndim>& bshape, const Shape<ndim>& sshape,
-                                       const Shape<ndim>& rshape, const Shape<ndim>& rstride) {
-  Shape<ndim> coord = mxnet_op::unravel(idx, sshape);
-  index_t j = mxnet_op::ravel(coord, bshape);
-  AType val, residual;
-  Reducer::SetInitValue(val, residual);
-  for (size_t k = 0; k < M; ++k) {
-    coord = mxnet_op::unravel(k, rshape);
-    AType temp;
-    //if (use_index) {
-    //  temp = OP::Map(big[j + mxnet_op::dot(coord, rstride)], k);
-    //}
-    //else
-    //{
-      temp = AType(OP::Map(big[j + mxnet_op::dot(coord, rstride)]));
-    //}
-    Reducer::Reduce(val, temp, residual);
-  }
-  Reducer::Finalize(val, residual);
-  assign(&small[idx], addto, OType(val));
-}
-
 template<typename Reducer, int ndim, typename AType, typename DType, typename OType, typename OP>
 MSHADOW_XINLINE void seq_reduce_assign(const index_t idx, const size_t M, const bool addto,
                                        const DType* __restrict big, OType *small,
