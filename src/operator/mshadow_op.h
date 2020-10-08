@@ -129,8 +129,9 @@ using std::is_integral;
 MXNET_UNARY_MATH_OP_NC(identity, a);
 
 struct Num {
-  float num;
   size_t idx;
+  float num;
+  
   
   Num& operator+=(const Num& rhs){
     return *this;
