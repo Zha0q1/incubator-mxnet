@@ -26,6 +26,8 @@
 #ifndef MXNET_OPERATOR_NUMPY_NP_BROADCAST_REDUCE_INL_CUH_
 #define MXNET_OPERATOR_NUMPY_NP_BROADCAST_REDUCE_INL_CUH_
 
+#include "../tensor/broadcast_reduce-inl.cuh"
+
 using namespace mshadow::cuda;
 
 
