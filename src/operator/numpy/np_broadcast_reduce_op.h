@@ -577,7 +577,7 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
 
 
 
-    broadcast::seq_reduce_compute<mshadow_op::argmax<DType, OType>, NDim, OType, DType, OType, mxnet::op::mshadow_op::myOp, true> (
+    broadcast::seq_reduce_compute<mshadow_op::argmax, NDim, OType, DType, OType, mxnet::op::mshadow_op::myOp<DType, OType>, true> (
       N, M, req[0] == kAddTo, in_data.dptr<DType>(), static_cast<OType*>(out_data.dptr_),
       in_data.shape_.get<NDim>(), out_data.shape_.get<NDim>(), rshape, rstride);
     
