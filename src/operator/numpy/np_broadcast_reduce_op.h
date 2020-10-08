@@ -550,7 +550,10 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   //  std:: cout<< "ddd" << small[i] << std::endl;
   
   
-
+  
+// #ifdef __CUDACC__
+// #include "broadcast_reduce-inl.cuh"
+// #endif
 
 
   mxnet::TShape src_shape, dst_shape;
