@@ -267,6 +267,8 @@ MSHADOW_XINLINE void binary_broadcast_assign(const index_t idx, const bool addto
   assign(&out[idx], addto, OP::Map(lhs[j], rhs[k]));
 }
 
+
+
 template<typename Reducer, int ndim, typename AType, typename DType, typename OType, typename OP, bool use_index = false>
 MSHADOW_XINLINE void seq_reduce_assign(const index_t idx, const size_t M, const bool addto,
                                        const DType* __restrict big, OType *small,
@@ -279,13 +281,13 @@ MSHADOW_XINLINE void seq_reduce_assign(const index_t idx, const size_t M, const 
   for (size_t k = 0; k < M; ++k) {
     coord = mxnet_op::unravel(k, rshape);
     AType temp;
-    if (use_index) {
-      temp = OP::Map(big[j + mxnet_op::dot(coord, rstride)], k);
-    }
-    else
-    {
-      temp = AType(OP::Map(big[j + mxnet_op::dot(coord, rstride)]));
-    }
+    //if (use_index) {
+    //  temp = OP::Map(big[j + mxnet_op::dot(coord, rstride)], k);
+    //}
+    //else
+    //{
+    //  temp = AType(OP::Map(big[j + mxnet_op::dot(coord, rstride)]));
+    //}
     Reducer::Reduce(val, temp, residual);
   }
   Reducer::Finalize(val, residual);
