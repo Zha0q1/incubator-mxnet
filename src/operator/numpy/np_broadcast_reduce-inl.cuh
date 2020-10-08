@@ -29,4 +29,29 @@
 using namespace mshadow::cuda;
 
 
+template<typename Reducer, int ndim, typename DType, typename OP, bool safe_acc = false>
+void Reduce(Stream<gpu> *s, const TBlob& small, const OpReqType req,
+            const Tensor<gpu, 1, char>& workspace, const TBlob& big) {
+  if (req == kNullOp) return;
+  cudaStream_t stream = Stream<gpu>::GetStream(s);
+  ReduceImplConfig config(small.shape_, big.shape_, nullptr, nullptr, sizeof(DType));
+  if (safe_acc) {
+    MXNET_ACC_TYPE_SWITCH(mshadow::DataType<DType>::kFlag, DataType, AType, {
+      typedef typename std::conditional<safe_acc, AType, DataType>::type AccType;
+      MSHADOW_TYPE_SWITCH(small.type_flag_, OType, {
+        typedef typename std::conditional<safe_acc, OType, DataType>::type OutType;
+        config = ReduceImplConfig(small.shape_, big.shape_, nullptr, nullptr,
+                                  sizeof(AccType));
+        ReduceImpl<Reducer, ndim, AccType, DataType, OutType, OP>(
+          stream, small, req, big, workspace, config);
+      });
+    });
+  } else {
+    ReduceImpl<Reducer, ndim, DType, DType, DType, OP>(stream, small, req, big, workspace, config);
+  }
+}
+
+
+
+
 #endif  //MXNET_OPERATOR_NUMPY_NP_BROADCAST_REDUCE_INL_CUH_

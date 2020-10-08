@@ -571,13 +571,13 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
     //Tensor<xpu, 1, char> workspace =
     //    ctx.requested[0].get_space_typed<xpu, 1, char>(Shape1(workspace_size), s);
 
+   
+
+    //cpu version
     if (req[0] == kNullOp) return;
     Shape<NDim> rshape, rstride;
     diffuuu(out_data.shape_.get<NDim>(), in_data.shape_.get<NDim>(), &rshape, &rstride);
     size_t N = out_data.shape_.Size(), M = rshape.Size();
-
-
-
     broadcast::seq_reduce_compute<mshadow_op::argmax, NDim, OType, DType, OType, mxnet::op::mshadow_op::myOp<DType, OType>, true> (
       N, M, req[0] == kAddTo, in_data.dptr<DType>(), static_cast<OType*>(out_data.dptr_),
       in_data.shape_.get<NDim>(), out_data.shape_.get<NDim>(), rshape, rstride);
