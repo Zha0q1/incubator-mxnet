@@ -279,7 +279,7 @@ MSHADOW_XINLINE void seq_reduce_assign(const index_t idx, const size_t M, const 
   Reducer::SetInitValue(val, residual);
   for (size_t k = 0; k < M; ++k) {
     coord = mxnet_op::unravel(k, rshape);
-    AType temp;
+    Atype temp;
     if (use_index) {
       temp = OP::Map(big[j + mxnet_op::dot(coord, rstride)]);
     } else {
