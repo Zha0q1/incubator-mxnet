@@ -562,7 +562,7 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
 
     if (req[0] == kNullOp) return;
     Shape<NDim> rshape, rstride;
-    //diffuuu(out_data.shape_.get<NDim>(), in_data.shape_.get<NDim>(), &rshape, &rstride);
+    diffuuu(out_data.shape_.get<NDim>(), in_data.shape_.get<NDim>(), &rshape, &rstride);
     size_t N = out_data.shape_.Size(), M = rshape.Size();
     //seq_reduce_compute<mshadow_op::argmax, NDim, OType, DType, OType, op::mshadow_op::identity>(
     //  N, M, req[0] == kAddTo, in_data.dptr<DType>(), out_data.dptr<OType>(),
