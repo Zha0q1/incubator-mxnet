@@ -132,7 +132,9 @@ struct Num {
   float num;
   size_t idx;
   
-  Num& operator+=(const Num& rhs){}
+  Num& operator+=(const Num& rhs){
+    return *this;
+  }
   
 };
 
