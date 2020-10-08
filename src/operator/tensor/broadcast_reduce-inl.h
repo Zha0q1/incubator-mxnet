@@ -284,7 +284,7 @@ MSHADOW_XINLINE void seq_reduce_assign(const index_t idx, const size_t M, const 
     }
     else
     {
-      temp = AType(OP::Map(big[j + mxnet_op::dot(coord, rstride)]))
+      temp = AType(OP::Map(big[j + mxnet_op::dot(coord, rstride)]));
     }
     Reducer::Reduce(val, temp, residual);
   }
