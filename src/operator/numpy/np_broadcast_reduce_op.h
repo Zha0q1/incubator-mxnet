@@ -529,10 +529,10 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   TBlob dummy = out;
   dummy.dptr_ = (int64_t*)workspace.dptr_;
   
-  dmlc::optional<mxnet::Tuple<int>> axes;
-  //axis = mxnet::Tuple<int>(1, param.axis.value());
-  axes.value().SetDim(1);
-  axes.value()[0] = param.axis;
+  //dmlc::optional<mxnet::Tuple<int>> axes;
+  axes = mxnet::Tuple<int>(1, param.axis.value());
+  //axes.value().SetDim(1);
+  //axes.value()[0] = param.axis;
   TShape small;
   small = NumpyReduceAxesShapeImpl(inputs[0].shape_, axes, true);
 
