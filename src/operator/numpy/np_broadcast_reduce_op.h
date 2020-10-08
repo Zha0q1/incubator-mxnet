@@ -514,15 +514,15 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   const ReduceAxisParam& param = nnvm::get<ReduceAxisParam>(attrs.parsed);
   std::cout<<"aaaaa" <<std::endl;
   
-  struct Num {
-    float num;
-    size_t idx;
-  };
+  // struct Num {
+  //   float num;
+  //   size_t idx;
+  // };
 
   mshadow::Stream<xpu> *s = ctx.get_stream<xpu>();
   TBlob out = outputs[0];
 
-  int workspace_size = sizeof(Num) * out.shape_.Size();
+  int workspace_size = sizeof(mxnet::op::mshadow_op::Num) * out.shape_.Size();
   Tensor<xpu, 1, char> workspace = 
             ctx.requested[0].get_space_typed<xpu, 1, char>(Shape1(workspace_size), s);
   
@@ -549,7 +549,7 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   BroadcastReduceShapeCompact(inputs[0].shape_, small, &src_shape, &dst_shape);
 
   typedef float DType;
-  typedef Num OType;
+  typedef mxnet::op::mshadow_op::Num OType;
 
 
   const TBlob in_data = inputs[0].reshape(src_shape);
@@ -565,17 +565,9 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
     diffuuu(out_data.shape_.get<NDim>(), in_data.shape_.get<NDim>(), &rshape, &rstride);
     size_t N = out_data.shape_.Size(), M = rshape.Size();
 
-    struct myOp : public mxnet_op::tunable { 
-      template<typename DType, typename IType> 
-      MSHADOW_XINLINE static DType Map(DType1 a, IType b) {
-        Num temp;
-        temp.num = a;
-        temp.idx = b;
-        return temp; 
-      }
-    };
 
-    broadcast::seq_reduce_compute<mshadow_op::argmax, NDim, OType, DType, OType, myOp, true> (
+
+    broadcast::seq_reduce_compute<mshadow_op::argmax, NDim, OType, DType, OType, mxnet::op::mshadow_op::myOp, true> (
       N, M, req[0] == kAddTo, in_data.dptr<DType>(), static_cast<OType*>(out_data.dptr_),
       in_data.shape_.get<NDim>(), out_data.shape_.get<NDim>(), rshape, rstride);
     

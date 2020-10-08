@@ -128,6 +128,21 @@ using std::is_integral;
 
 MXNET_UNARY_MATH_OP_NC(identity, a);
 
+struct Num {
+  float num;
+  size_t idx;
+};
+
+struct myOp : public mxnet_op::tunable { 
+  template<typename DType, typename IType> 
+  MSHADOW_XINLINE static Num Map(DType a, IType b) {
+
+    temp.num = a;
+    temp.idx = b;
+    return temp; 
+  }
+};
+
 MXNET_UNARY_MATH_OP(identity_grad, 1);
 
 struct identity_with_cast {
