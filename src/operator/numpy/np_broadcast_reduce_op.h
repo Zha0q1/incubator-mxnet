@@ -565,7 +565,7 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
     diffuuu(out_data.shape_.get<NDim>(), in_data.shape_.get<NDim>(), &rshape, &rstride);
     size_t N = out_data.shape_.Size(), M = rshape.Size();
     broadcast::seq_reduce_compute<mshadow_op::argmax, NDim, OType, DType, OType, op::mshadow_op::identity> (
-      N, M, req[0] == kAddTo, in_data.dptr<DType>(), static_cast<Otype*>(out_data.dptr_),
+      N, M, req[0] == kAddTo, in_data.dptr<DType>(), static_cast<OType*>(out_data.dptr_),
       in_data.shape_.get<NDim>(), out_data.shape_.get<NDim>(), rshape, rstride);
     
     
