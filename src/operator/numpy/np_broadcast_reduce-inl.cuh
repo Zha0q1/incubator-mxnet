@@ -27,6 +27,7 @@
 #define MXNET_OPERATOR_NUMPY_NP_BROADCAST_REDUCE_INL_CUH_
 
 #include "../tensor/broadcast_reduce-inl.cuh"
+#include "../tensor/broadcast_reduce-inl.h"
 
 using namespace mshadow::cuda;
 using namespace mshadow;
@@ -94,14 +95,14 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
     }
   }
 
-
-
-
-
-
-
-
 */
+
+
+
+
+
+
+
 
 
 }
