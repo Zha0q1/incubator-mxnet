@@ -529,19 +529,22 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   TBlob dummy = out;
   dummy.dptr_ = (int64_t*)workspace.dptr_;
   
-  dmlc::optional<mxnet::Tuple<int>> axis;
+  dmlc::optional<mxnet::Tuple<int>> axes;
   //axis = mxnet::Tuple<int>(1, param.axis.value());
+  axes.value.SetDim(1);
+  axes.value[0] = param.axis;
   TShape small;
-  small = NumpyReduceAxesShapeImpl(inputs[0].shape_, axis, true);
+  small = NumpyReduceAxesShapeImpl(inputs[0].shape_, axes, true);
 
+  
+  
+  std::cout<< "1111111" <<std::endl;
   
 
 
 
-
-
   mxnet::TShape src_shape, dst_shape;
-  // BroadcastReduceShapeCompact(inputs[0].shape_, small, &src_shape, &dst_shape);
+  BroadcastReduceShapeCompact(inputs[0].shape_, small, &src_shape, &dst_shape);
 
   typedef float DType;
   typedef Num OType;
