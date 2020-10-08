@@ -33,7 +33,7 @@ using namespace mshadow;
 
 template<typename Reducer, int NDim, typename DType, typename OType>
 void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out_data,
-                          const Tensor<cpu, 1, char>& workspace) {
+                          const Tensor<gpu, 1, char>& workspace) {
   std::cout << "dududu" << std::endl;
   
 //   if (req == kNullOp) return;
