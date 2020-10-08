@@ -32,8 +32,10 @@ using namespace mshadow::cuda;
 
 
 template<typename Reducer, int NDim, typename DType, typename OType>
-void NumpyArgMinMaxReduce(mshadow::Stream<gpu> *s, const TBlob& small, const TBlob& big) {
-    std::cout << "dududu" << std::endl;
+void NumpyArgMinMaxReduce(mshadow::Stream<gpu> *s, const TBlob& in_data, const TBlob& out_data,
+                          const Tensor<cpu, 1, char>& workspace) {
+  std::cout << "dududu" << std::endl;
+  
 //   if (req == kNullOp) return;
 //   cudaStream_t stream = Stream<gpu>::GetStream(s);
 //   ReduceImplConfig config(small.shape_, big.shape_, nullptr, nullptr, sizeof(DType));
@@ -56,4 +58,4 @@ void NumpyArgMinMaxReduce(mshadow::Stream<gpu> *s, const TBlob& small, const TBl
 
 
 
-#endif  //MXNET_OPERATOR_NUMPY_NP_BROADCAST_REDUCE_INL_CUH_
+#endif // MXNET_OPERATOR_NUMPY_NP_BROADCAST_REDUCE_INL_CUH_
