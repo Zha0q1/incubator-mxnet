@@ -283,10 +283,8 @@ MSHADOW_XINLINE void seq_reduce_assign(const index_t idx, const size_t M, const 
     if (use_index) {
       temp = OP::Map(big[j + mxnet_op::dot(coord, rstride)]);
       *(reinterpret_cast<size_t*>(&temp)) = k;
-      std::cout << "cao " << *(reinterpret_cast<size_t*>(&temp)) << " " << k << std::endl;
     } else {
       temp = OP::Map(big[j + mxnet_op::dot(coord, rstride)]);
-      
     }
       
 

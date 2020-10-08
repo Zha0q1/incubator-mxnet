@@ -532,7 +532,7 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   mshadow::Stream<xpu> *s = ctx.get_stream<xpu>();
   TBlob out = outputs[0];
 
-  int workspace_size = sizeof(mxnet::op::mshadow_op::Num) * out.shape_.Size();
+  int workspace_size = sizeof(mxnet::op::mshadow_op::Num<size_t, float>) * out.shape_.Size();
   Tensor<xpu, 1, char> workspace = 
             ctx.requested[0].get_space_typed<xpu, 1, char>(Shape1(workspace_size), s);
   
@@ -559,7 +559,7 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   BroadcastReduceShapeCompact(inputs[0].shape_, small, &src_shape, &dst_shape);
 
   typedef float DType;
-  typedef mxnet::op::mshadow_op::Num OType;
+  typedef mxnet::op::mshadow_op::Num<size_t, float> OType;
 
 
   const TBlob in_data = inputs[0].reshape(src_shape);

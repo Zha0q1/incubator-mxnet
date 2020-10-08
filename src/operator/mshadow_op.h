@@ -128,11 +128,14 @@ using std::is_integral;
 
 MXNET_UNARY_MATH_OP_NC(identity, a);
 
+template <typname IType, typename DType>
 struct Num {
-  size_t idx;
-  float num;
-  
-  
+  //size_t idx;
+  //float num;
+  IType idx;
+  DType num;
+
+
   Num& operator+=(const Num& rhs){
     return *this;
   }
