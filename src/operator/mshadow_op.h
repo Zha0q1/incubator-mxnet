@@ -131,7 +131,8 @@ MXNET_UNARY_MATH_OP_NC(identity, a);
 struct Num {
   float num;
   size_t idx;
-
+  
+  Num& operator+=(const Num& rhs){}
   
 };
 
