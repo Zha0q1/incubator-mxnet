@@ -268,7 +268,7 @@ MSHADOW_XINLINE void binary_broadcast_assign(const index_t idx, const bool addto
 }
 
 
-template<typename Reducer, int ndim, typename AType, typename DType, typename OType, typename OP>
+template<typename Reducer, int ndim, typename AType, typename DType, typename OType, typename OP, bool use_index = false>
 MSHADOW_XINLINE void seq_reduce_assign(const index_t idx, const size_t M, const bool addto,
                                        const DType* __restrict big, OType *small,
                                        const Shape<ndim>& bshape, const Shape<ndim>& sshape,
@@ -279,30 +279,40 @@ MSHADOW_XINLINE void seq_reduce_assign(const index_t idx, const size_t M, const 
   Reducer::SetInitValue(val, residual);
   for (size_t k = 0; k < M; ++k) {
     coord = mxnet_op::unravel(k, rshape);
-    Reducer::Reduce(val, AType(OP::Map(big[j + mxnet_op::dot(coord, rstride)])), residual);
+    AType temp;
+    if (use_index) {
+      temp = AType(OP::Map(big[j + mxnet_op::dot(coord, rstride)]));
+    } else {
+      temp = OP::Map(big[j + mxnet_op::dot(coord, rstride)]);
+      temp.idx = k;
+
+    }
+      
+
+    Reducer::Reduce(val, , residual);
   }
   Reducer::Finalize(val, residual);
   assign(&small[idx], addto, OType(val));
 }
 
-template<typename Reducer, int ndim, typename AType, typename DType, typename OType, typename OP>
-MSHADOW_XINLINE void seq_reduce_assign_with_index(const index_t idx, const size_t M, const bool addto,
-                                       const DType* __restrict big, OType *small,
-                                       const Shape<ndim>& bshape, const Shape<ndim>& sshape,
-                                       const Shape<ndim>& rshape, const Shape<ndim>& rstride) {
-  Shape<ndim> coord = mxnet_op::unravel(idx, sshape);
-  index_t j = mxnet_op::ravel(coord, bshape);
-  AType val, residual;
-  Reducer::SetInitValue(val, residual);
-  for (size_t k = 0; k < M; ++k) {
-    coord = mxnet_op::unravel(k, rshape);
-    AType temp;
-    temp = OP::Map(big[j + mxnet_op::dot(coord, rstride)], k);
-    Reducer::Reduce(val, temp, residual);
-  }
-  Reducer::Finalize(val, residual);
-  assign(&small[idx], addto, OType(val));
-}
+// template<typename Reducer, int ndim, typename AType, typename DType, typename OType, typename OP>
+// MSHADOW_XINLINE void seq_reduce_assign_with_index(const index_t idx, const size_t M, const bool addto,
+//                                        const DType* __restrict big, OType *small,
+//                                        const Shape<ndim>& bshape, const Shape<ndim>& sshape,
+//                                        const Shape<ndim>& rshape, const Shape<ndim>& rstride) {
+//   Shape<ndim> coord = mxnet_op::unravel(idx, sshape);
+//   index_t j = mxnet_op::ravel(coord, bshape);
+//   AType val, residual;
+//   Reducer::SetInitValue(val, residual);
+//   for (size_t k = 0; k < M; ++k) {
+//     coord = mxnet_op::unravel(k, rshape);
+//     // AType temp;
+//     // temp = OP::Map(big[j + mxnet_op::dot(coord, rstride)], k);
+//     Reducer::Reduce(val, temp, residual);
+//   }
+//   Reducer::Finalize(val, residual);
+//   assign(&small[idx], addto, OType(val));
+// }
 
 namespace {
 
@@ -339,12 +349,8 @@ void seq_reduce_compute(const size_t N, const size_t M, const bool addto,
                         const Shape<ndim> rstride) {
   #pragma omp parallel for num_threads(engine::OpenMP::Get()->GetRecommendedOMPThreadCount())
   for (index_t idx = 0; idx < static_cast<index_t>(N); ++idx) {
-    if (use_index)
-      seq_reduce_assign<Reducer, ndim, AType, DType, OType, OP>(idx, M, addto, big, small,
-          bshape, sshape, rshape, rstride);
-    else
-      seq_reduce_assign_with_index<Reducer, ndim, AType, DType, OType, OP>(idx, M, addto, big, small,
-          bshape, sshape, rshape, rstride);
+    seq_reduce_assign<Reducer, ndim, AType, DType, OType, OP, use_index>(idx, M, addto, big, small,
+        bshape, sshape, rshape, rstride);
   }
 }
 
