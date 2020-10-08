@@ -23,8 +23,8 @@
  * \brief GPU implementations for numpy binary broadcast ops
  * \author Zhaoqi Zhu
 */
-#ifndef MXNET_OPERATOR_NUMPY_NP_BROADCAST_REDUCE_INL_CUH_
-#define MXNET_OPERATOR_NUMPY_NP_BROADCAST_REDUCE_INL_CUH_
+#ifndef MXNET_OPERATOR_NUMPY_NP_BROADCAST_REDUCE_OP_CUH_
+#define MXNET_OPERATOR_NUMPY_NP_BROADCAST_REDUCE_OP_CUH_
 
 #include "../tensor/broadcast_reduce-inl.cuh"
 #include "../tensor/broadcast_reduce-inl.h"
@@ -110,4 +110,4 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
 
 
 
-#endif // MXNET_OPERATOR_NUMPY_NP_BROADCAST_REDUCE_INL_CUH_
+#endif // MXNET_OPERATOR_NUMPY_NP_BROADCAST_REDUCE_OP_CUH_
