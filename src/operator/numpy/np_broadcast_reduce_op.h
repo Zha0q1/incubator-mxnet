@@ -591,6 +591,9 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
     std::cout << (static_cast<OType*>(out_data.dptr_) + i)->num << " " << (static_cast<OType*>(out_data.dptr_) + i)->idx  << std::endl;
   }
 
+  Kernel<argmax_parse>, xpu>::Launch(
+        s, out.shape_.Size(), outputs[0].dptr<int64_t>(), static_cast<OType*>(out_data.dptr_));
+
 
   // ReduceAxesComputeImpl<xpu, mshadow_op::argmax, true, false>(ctx, inputs, req, {dummy}, small);
   // NumpyReduceAxesCompute()
