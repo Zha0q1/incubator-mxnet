@@ -511,7 +511,7 @@ struct argmax_parse {
 
 
 template <typename Reducer, int NDim, typename DType, typename OType>
-void NumpyArgMinMaxCPUReduce(const TBlob& in_data, const TBlob& out_data) {
+void NumpyArgMinMaxReduce(Stream<cpu> *s, const TBlob& in_data, const TBlob& out_data) {
   using namespace mshadow;
   Shape<NDim> rshape, rstride;
   diffuuu(out_data.shape_.get<NDim>(), in_data.shape_.get<NDim>(), &rshape, &rstride);
@@ -521,7 +521,9 @@ void NumpyArgMinMaxCPUReduce(const TBlob& in_data, const TBlob& out_data) {
     in_data.shape_.get<NDim>(), out_data.shape_.get<NDim>(), rshape, rstride);
 }
 
-
+#ifdef __CUDACC__
+//#include "np_broadcast_reduce-inl.cuh"
+#endif
 
 template<typename xpu>
 void NumpyArgMinMaxCompute(const nnvm::NodeAttrs& attrs,
@@ -532,59 +534,39 @@ void NumpyArgMinMaxCompute(const nnvm::NodeAttrs& attrs,
   using namespace mshadow;
   using namespace mshadow::expr;
   const ReduceAxisParam& param = nnvm::get<ReduceAxisParam>(attrs.parsed);
-  
-  // struct Num {
-  //   float num;
-  //   size_t idx;
-  // };
-
   mshadow::Stream<xpu> *s = ctx.get_stream<xpu>();
   TBlob out = outputs[0];
-
-  int workspace_size = sizeof(mxnet::op::mshadow_op::Num<size_t, float>) * out.shape_.Size();
+  // define in type and out type
+  typedef float DType;
+  typedef mxnet::op::mshadow_op::Num<size_t, float> OType;
+  // request a work space
+  size_t workspace_size = sizeof(OType) * out.shape_.Size();
   Tensor<xpu, 1, char> workspace = 
             ctx.requested[0].get_space_typed<xpu, 1, char>(Shape1(workspace_size), s);
-  
+  // set up dummy output
   TBlob dummy = out;
   dummy.dptr_ = (int64_t*)workspace.dptr_;
-  
+  // get the outputshape
   dmlc::optional<mxnet::Tuple<int>> axes;
   if (param.axis.has_value()) {
     mxnet::Tuple<int> t({param.axis.value()});
     axes = dmlc::optional<mxnet::Tuple<int>>(t);
   }
-  
-  //axes.value().SetDim(1);
-  //axes.value()[0] = param.axis;
   TShape small;
   small = NumpyReduceAxesShapeImpl(inputs[0].shape_, axes, true);
-
-  //for (int i=0; i<small.ndim(); i++)
-  //  std:: cout<< "ddd" << small[i] << std::endl;
-  
-  
-  
-// #ifdef __CUDACC__
-// #include "broadcast_reduce-inl.cuh"
-// #endif
-
-
+  // reshape the input and dummy output tensor
   mxnet::TShape src_shape, dst_shape;
   BroadcastReduceShapeCompact(inputs[0].shape_, small, &src_shape, &dst_shape);
-
-
-  typedef float DType;
-  typedef mxnet::op::mshadow_op::Num<size_t, float> OType;
-
   const TBlob in_data = inputs[0].reshape(src_shape);
   const TBlob out_data = dummy.reshape(dst_shape);
+  // switch dim
   BROADCAST_NDIM_SWITCH(dst_shape.ndim(), NDim, {
     //size_t workspace_size = broadcast::ReduceWorkspaceSize(
     //    s, out_data.shape_, req[0], in_data.shape_, sizeof(OType));
     //Tensor<xpu, 1, char> workspace =
     //    ctx.requested[0].get_space_typed<xpu, 1, char>(Shape1(workspace_size), s);
 
-    NumpyArgMinMaxCPUReduce<mshadow_op::argmax, NDim, DType, OType>(in_data, out_data);
+    NumpyArgMinMaxReduce<mshadow_op::argmax, NDim, DType, OType>(s, in_data, out_data);
 
     //cpu version
 
@@ -605,10 +587,12 @@ void NumpyArgMinMaxCompute(const nnvm::NodeAttrs& attrs,
   //for (int i=0; i<out.shape_.Size(); i++) {
   //  std::cout << (static_cast<OType*>(out_data.dptr_) + i)->num << " " << (static_cast<OType*>(out_data.dptr_) + i)->idx  << std::endl;
   //}
+
+  // parse the indices from the dummy tensor back to the actual output tensor
   using namespace mxnet_op;
   Kernel<argmax_parse, xpu>::Launch(
-        s, out.shape_.Size(), outputs[0].dptr<int64_t>(),
-        static_cast<OType*>(out_data.dptr_));
+      s, out.shape_.Size(), outputs[0].dptr<int64_t>(),
+      static_cast<OType*>(out_data.dptr_));
 
 
   // ReduceAxesComputeImpl<xpu, mshadow_op::argmax, true, false>(ctx, inputs, req, {dummy}, small);
