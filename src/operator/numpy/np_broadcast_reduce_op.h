@@ -577,7 +577,9 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
     //    s, out_data, req[0], workspace, in_data);
   });
 
-
+  for (int i=0; i<out.shape_.Size(); i++) {
+    std::cout << (dummy.dptr<OType>() + i)->num << " " << (dummy.dptr<OType>() + i)->idx  << std::endl;
+  }
 
 
   // ReduceAxesComputeImpl<xpu, mshadow_op::argmax, true, false>(ctx, inputs, req, {dummy}, small);
