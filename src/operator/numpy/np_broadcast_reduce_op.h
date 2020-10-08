@@ -509,8 +509,10 @@ struct argmax_parse {
   }
 };
 
+
 template <typename Reducer, int NDim, typename DType, typename OType>
 void NumpyArgMinMaxCPUReduce(const TBlob& in_data, const TBlob& out_data) {
+  using namespace mshadow;
   Shape<NDim> rshape, rstride;
   diffuuu(out_data.shape_.get<NDim>(), in_data.shape_.get<NDim>(), &rshape, &rstride);
   size_t N = out_data.shape_.Size(), M = rshape.Size();
