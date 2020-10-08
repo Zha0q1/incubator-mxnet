@@ -433,7 +433,6 @@ void NumpySearchAxisCompute(const nnvm::NodeAttrs& attrs,
                             const std::vector<TBlob>& outputs) {
   using namespace mshadow;
   using namespace mshadow::expr;
-  std::cout<<"bbb" <<std::endl;
   const ReduceAxisParam& param = nnvm::get<ReduceAxisParam>(attrs.parsed);
   Stream<xpu> *s = ctx.get_stream<xpu>();
   int axis = inputs[0].ndim();
@@ -448,7 +447,6 @@ void NumpySearchAxisCompute(const nnvm::NodeAttrs& attrs,
     input = TBlob(input.dptr_, shape_2d, input.dev_mask(), input.type_flag_, input.dev_id());
     axis = 1;
   }
-  std::cout<<"ccc" <<std::endl;
   axis = CheckAxis(axis, input.shape_.ndim());
   if (inputs[0].shape_.ndim() != 0) {
     if (param.axis.has_value()) {
@@ -461,7 +459,6 @@ void NumpySearchAxisCompute(const nnvm::NodeAttrs& attrs,
       CHECK_NE(inputs[0].shape_.Size(), 0U) << "attempt to search an empty sequence";
     }
   }
-  std::cout<<"ddd" <<std::endl;
   if (input.shape_.Size() == 0U) return;  // zero-size tensor
   mxnet::TShape shape = AxisShapeCompact(input.shape_, &axis, false);
   MSHADOW_TYPE_SWITCH(inputs[0].type_flag_, DType, {
@@ -522,7 +519,6 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   using namespace mshadow;
   using namespace mshadow::expr;
   const ReduceAxisParam& param = nnvm::get<ReduceAxisParam>(attrs.parsed);
-  std::cout<<"aaaaa" <<std::endl;
   
   // struct Num {
   //   float num;
@@ -547,10 +543,9 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
   TShape small;
   small = NumpyReduceAxesShapeImpl(inputs[0].shape_, axes, true);
 
-  for (int i=0; i<small.ndim(); i++)
-    std:: cout<< "ddd" << small[i] << std::endl;
+  //for (int i=0; i<small.ndim(); i++)
+  //  std:: cout<< "ddd" << small[i] << std::endl;
   
-  std::cout<< "1111111" <<std::endl;
   
 
 
@@ -587,9 +582,9 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
     //    s, out_data, req[0], workspace, in_data);
   });
 
-  for (int i=0; i<out.shape_.Size(); i++) {
-    std::cout << (static_cast<OType*>(out_data.dptr_) + i)->num << " " << (static_cast<OType*>(out_data.dptr_) + i)->idx  << std::endl;
-  }
+  //for (int i=0; i<out.shape_.Size(); i++) {
+  //  std::cout << (static_cast<OType*>(out_data.dptr_) + i)->num << " " << (static_cast<OType*>(out_data.dptr_) + i)->idx  << std::endl;
+  //}
   using namespace mxnet_op;
   Kernel<argmax_parse, xpu>::Launch(
         s, out.shape_.Size(), outputs[0].dptr<int64_t>(),
