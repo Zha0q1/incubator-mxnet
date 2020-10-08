@@ -511,7 +511,7 @@ struct argmax_parse {
 
 
 template <typename Reducer, int NDim, typename DType, typename OType>
-void NumpyArgMinMaxReduce(mshadow::Stream<cpu> *s, const TBlob& in_data, const TBlob& out_data
+void NumpyArgMinMaxReduce(mshadow::Stream<cpu> *s, const TBlob& in_data, const TBlob& out_data,
                           const Tensor<cpu, 1, char>& workspace) {
   using namespace mshadow;
   Shape<NDim> rshape, rstride;
