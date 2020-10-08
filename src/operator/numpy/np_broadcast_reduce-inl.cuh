@@ -30,7 +30,7 @@ using namespace mshadow::cuda;
 
 
 template<typename Reducer, int NDim, typename DType, typename OType>
-void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& small, const TBlob& big) {
+void NumpyArgMinMaxReduce(mshadow::Stream<gpu> *s, const TBlob& small, const TBlob& big) {
 //   if (req == kNullOp) return;
 //   cudaStream_t stream = Stream<gpu>::GetStream(s);
 //   ReduceImplConfig config(small.shape_, big.shape_, nullptr, nullptr, sizeof(DType));

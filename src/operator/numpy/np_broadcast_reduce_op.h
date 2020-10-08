@@ -522,7 +522,7 @@ void NumpyArgMinMaxReduce(mshadow::Stream<cpu> *s, const TBlob& in_data, const T
 }
 
 #ifdef __CUDACC__
-//#include "np_broadcast_reduce-inl.cuh"
+#include "np_broadcast_reduce-inl.cuh"
 #endif
 
 template<typename xpu>
