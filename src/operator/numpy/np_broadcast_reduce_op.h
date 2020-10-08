@@ -564,7 +564,18 @@ void NumpyArgMaxCompute(const nnvm::NodeAttrs& attrs,
     Shape<NDim> rshape, rstride;
     diffuuu(out_data.shape_.get<NDim>(), in_data.shape_.get<NDim>(), &rshape, &rstride);
     size_t N = out_data.shape_.Size(), M = rshape.Size();
-    broadcast::seq_reduce_compute<mshadow_op::argmax, NDim, OType, DType, OType, op::mshadow_op::identity> (
+
+    struct myOp : public mxnet_op::tunable { 
+      template<typename DType, typename IType> 
+      MSHADOW_XINLINE static DType Map(DType1 a, IType b) {
+        Num temp;
+        temp.num = a;
+        temp.idx = b;
+        return temp; 
+      }
+    };
+
+    broadcast::seq_reduce_compute<mshadow_op::argmax, NDim, OType, DType, OType, myOp> (
       N, M, req[0] == kAddTo, in_data.dptr<DType>(), static_cast<OType*>(out_data.dptr_),
       in_data.shape_.get<NDim>(), out_data.shape_.get<NDim>(), rshape, rstride);
     
