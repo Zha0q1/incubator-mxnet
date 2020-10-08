@@ -365,8 +365,12 @@ void seq_reduce_compute(const size_t N, const size_t M, const bool addto,
                         const Shape<ndim> rstride) {
   #pragma omp parallel for num_threads(engine::OpenMP::Get()->GetRecommendedOMPThreadCount())
   for (index_t idx = 0; idx < static_cast<index_t>(N); ++idx) {
-    seq_reduce_assign<Reducer, ndim, AType, DType, OType, OP, use_index>(idx, M, addto, big, small,
-        bshape, sshape, rshape, rstride);
+    if (use_index)
+      seq_reduce_assign<Reducer, ndim, AType, DType, OType, OP, use_index>(idx, M, addto, big, small,
+          bshape, sshape, rshape, rstride);
+    else
+      seq_reduce_assign_with_index<Reducer, ndim, AType, DType, OType, OP, use_index>(idx, M, addto, big, small,
+          bshape, sshape, rshape, rstride);
   }
 }
 
