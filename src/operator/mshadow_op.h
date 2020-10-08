@@ -1602,7 +1602,6 @@ struct argmax {
   template<typename DType>
   MSHADOW_XINLINE static void SetInitValue(DType &initv, DType &residual) { // NOLINT(*)
     SetInitValue(initv);
-    residual = 0;
   }
 };
 
