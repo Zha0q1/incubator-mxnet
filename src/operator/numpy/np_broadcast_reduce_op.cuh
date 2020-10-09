@@ -33,6 +33,15 @@ using namespace mshadow::cuda;
 using namespace mshadow;
 using namespace broadcast;
 
+#define KERNEL_UNROLL_SWITCH(do_unroll, unrollAmount, unrollVar, ...) \
+  if (do_unroll) {                                                    \
+    const int unrollVar = unrollAmount;                               \
+    {__VA_ARGS__}                                                     \
+  } else {                                                            \
+    const int unrollVar = 1;                                          \
+    {__VA_ARGS__}                                                     \
+  }
+
 template<typename Reducer, int NDim, typename DType, typename OType>
 void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out_data,
                           const Tensor<gpu, 1, char>& workspace) {
