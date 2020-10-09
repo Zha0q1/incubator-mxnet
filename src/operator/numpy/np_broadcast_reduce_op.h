@@ -586,6 +586,7 @@ void NumpyArgMinMaxCompute(const nnvm::NodeAttrs& attrs,
   });
 
   for (int i=0; i<out.shape_.Size(); i++) {
+    std::cout << "out=put" << i <<std::endl;
    std::cout << (static_cast<OType*>(out_data.dptr_) + i)->num << " " << (static_cast<OType*>(out_data.dptr_) + i)->idx  << std::endl;
   }
 

@@ -56,6 +56,9 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
 //     ReduceImpl<Reducer, ndim, DType, DType, DType, OP>(stream, small, req, big, workspace, config);
 //   }
   
+  
+
+  /*
   std::cout << "m is: " << config.M << std::endl;
   std::cout << "n is: " << config.N << std::endl;
   
@@ -68,6 +71,11 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
     MSHADOW_CUDA_POST_KERNEL_CHECK(reduce_kernel_M1);
   }
   std::cout << "boom boom " << std::endl;
+
+  */
+
+
+
   /*
   else {
     OType* out_dptr = reinterpret_cast<OType*>(out_data.dptr_);
