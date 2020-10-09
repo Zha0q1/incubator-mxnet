@@ -70,6 +70,8 @@ __global__ void reduce_kernel(const int N, const int M, const bool addto,
           }
           #pragma unroll
           for (int u=0;u < unroll;u++) {
+            int ku = k+ u;
+            printf("kkkkkku is: %d\n", ku);
             if (k + u*by < Mend) Reducer::Reduce(val, tmp[u], residual);
           }
         }
