@@ -70,7 +70,9 @@ __global__ void reduce_kernel(const int N, const int M, const bool addto,
           }
           #pragma unroll
           for (int u=0;u < unroll;u++) {
+            int axis_idx = k - tidy - Mstart + u;
             int ku = k+ u;
+            printf("axis_idx is: %d\n", axis_idx);
             printf("kkkkkku is: %d\n", ku);
             if (k + u*by < Mend) Reducer::Reduce(val, tmp[u], residual);
           }
