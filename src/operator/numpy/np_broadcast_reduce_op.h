@@ -508,7 +508,7 @@ struct argmax_parse {
     //std::cout << "index " << i << " index2 " << in_data[i].idx << " num " << in_data[i].num << std::endl;
     printf("in1 is: %d\n", i);
     printf("in2 is: %d\n", in_data[i].idx);
-    printf("num is: %d\n", in_data[i].num);
+    printf("num is: %f\n", in_data[i].num);
     
     out_data[i] = in_data[i].idx;
   }
