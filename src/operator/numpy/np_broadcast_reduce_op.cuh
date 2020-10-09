@@ -122,7 +122,7 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
     if (config.Mnext > 1) {
 
       std::cout << "boom boom u9999" << std::endl;
-      reduce_lines_kernel<Reducer, OType>
+      reduce_lines_kernel<Reducer, OType, true>
       <<< config.kernel_2.gridSize, config.kernel_2.blockSize, 0, stream >>>
         (config.N, config.Mnext, false, config.N, out_dptr, reinterpret_cast<OType*>(out_data.dptr_));
       MSHADOW_CUDA_POST_KERNEL_CHECK(reduce_lines_kernel);

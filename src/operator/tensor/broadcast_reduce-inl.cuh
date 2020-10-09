@@ -205,7 +205,7 @@ __global__ void reduce_kernel(const int N, const int M, const bool addto,
 }
 
 // Simple reduction of lines when M is small
-template<typename Reducer, typename DType>
+template<typename Reducer, typename DType, bool use_index = false>
 __launch_bounds__(kMaxThreadsPerBlock)
 __global__ void reduce_lines_kernel(const int N, const int M, const bool addto,
   const int small_in_stride, const DType* __restrict small_in, DType *small_out) {
@@ -214,6 +214,9 @@ __global__ void reduce_lines_kernel(const int N, const int M, const bool addto,
     DType val, residual;
     Reducer::SetInitValue(val, residual);
     for (int k = 0; k < M; k++) {
+      printf("MMMMM is: %d\n", k);
+      if (use_index)
+        *(reinterpret_cast<size_t*>(&tmp[u])) = k;
       Reducer::Reduce(val, small_in[idx + k*small_in_stride], residual);
     }
 
