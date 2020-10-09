@@ -1582,10 +1582,12 @@ struct argmax {
   /*! \brief combine the results of two reducers */
   template<typename DType>
   MSHADOW_XINLINE static void Merge(volatile DType& dst_val, volatile DType& src_val) { // NOLINT(*)
+    Reduce(dst_val, src_val);
   }
   /*! \brief combine the results of two reducers */
   template<typename DType>
   MSHADOW_XINLINE static void Merge(volatile DType& dst_val, volatile DType& dst_residual, volatile DType& src_val, volatile DType& src_residual) { // NOLINT(*)
+    Reduce(dst_val, src_val);
   }
   /*! \brief finalize reduction */
   template<typename DType>
