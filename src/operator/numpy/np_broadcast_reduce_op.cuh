@@ -61,8 +61,8 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
   if (config.M == 1) {
     reduce_kernel_M1<Reducer, NDim, OType, DType, OType, mxnet::op::mshadow_op::myOp<DType, OType>>
     <<< config.kernel_1.gridDim, config.kernel_1.blockDim, 0, stream >>>(
-      config.N, false, in_data.dptr<DType>(), reinterpret_cast<OType*>(out_data.dptr_), in_data.shape_.get<ndim>(),
-      out_data.shape_.get<ndim>());
+      config.N, false, in_data.dptr<DType>(), reinterpret_cast<OType*>(out_data.dptr_), in_data.shape_.get<NDim>(),
+      out_data.shape_.get<NDim>());
     MSHADOW_CUDA_POST_KERNEL_CHECK(reduce_kernel_M1);
   }
   /*
@@ -93,8 +93,8 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
     KERNEL_UNROLL_SWITCH(do_unroll, unroll_reduce, UNROLL, {
       reduce_kernel<Reducer, NDim, OType, DType, OType, OP, UNROLL>
       <<< config.kernel_1.gridDim, config.kernel_1.blockDim, config.kernel_1.shMemSize, stream>>>(
-        config.N, config.M, addto, in_data.dptr<DType>(), out_dptr, in_data.shape_.get<ndim>(),
-        out_data.shape_.get<ndim>(), config.rshape.get<ndim>(), config.rstride.get<ndim>(),
+        config.N, config.M, addto, in_data.dptr<DType>(), out_dptr, in_data.shape_.get<NDim>(),
+        out_data.shape_.get<NDim>(), config.rshape.get<NDim>(), config.rstride.get<NDim>(),
         config.Mnext, config.kernel_1.do_transpose);
     });
     MSHADOW_CUDA_POST_KERNEL_CHECK(reduce_kernel);
