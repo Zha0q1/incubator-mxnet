@@ -505,7 +505,11 @@ struct argmax_parse {
   MSHADOW_XINLINE static void Map(index_t i,
                                   OType* out_data,
                                   const DType* in_data) {
-    std::cout << "index " << i << " index2 " << in_data[i].idx << " num " << in_data[i].num << std::endl;
+    //std::cout << "index " << i << " index2 " << in_data[i].idx << " num " << in_data[i].num << std::endl;
+    printf("in1 is: %d\n", i);
+    printf("in2 is: %d\n", in_data[i].idx);
+    printf("num is: %d\n", in_data[i].num);
+    
     out_data[i] = in_data[i].idx;
   }
 };
