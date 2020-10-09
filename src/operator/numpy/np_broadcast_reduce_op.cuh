@@ -39,8 +39,8 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
   std::cout << "dududu" << std::endl;
   
 //   if (req == kNullOp) return;
-  cudaStream_t stream = Stream<gpu>::GetStream(s);
-  ReduceImplConfig config(out_data.shape_, in_data.shape_, nullptr, nullptr, sizeof(DType));
+//  cudaStream_t stream = Stream<gpu>::GetStream(s);
+//  ReduceImplConfig config(out_data.shape_, in_data.shape_, nullptr, nullptr, sizeof(OType));
 //   if (safe_acc) {
 //     MXNET_ACC_TYPE_SWITCH(mshadow::DataType<DType>::kFlag, DataType, AType, {
 //       typedef typename std::conditional<safe_acc, AType, DataType>::type AccType;
