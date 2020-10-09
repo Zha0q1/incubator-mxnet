@@ -55,20 +55,28 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
 //   } else {
 //     ReduceImpl<Reducer, ndim, DType, DType, DType, OP>(stream, small, req, big, workspace, config);
 //   }
-
-/*
+  
+  std::cout << "m is: " << config.M << std::endl;
+  
   if (config.M == 1) {
-    reduce_kernel_M1<Reducer, ndim, AType, DType, OType, OP>
+    reduce_kernel_M1<Reducer, ndim, OType, DType, OType, OP>
     <<< config.kernel_1.gridDim, config.kernel_1.blockDim, 0, stream >>>(
-      config.N, false, big.dptr<DType>(), small.dptr<OType>(), big.shape_.get<ndim>(),
-      small.shape_.get<ndim>());
+      config.N, false, in_data.dptr<DType>(), reinterpret_cast<OType*>(out_data.dptr_), in_data.shape_.get<ndim>(),
+      out_data.shape_.get<ndim>());
     MSHADOW_CUDA_POST_KERNEL_CHECK(reduce_kernel_M1);
-  } else {
-    OType* small_dptr = reinterpret_cast<OType*>(in_data.dptr_)small.dptr<OType>();
-    bool addto = (req == kAddTo);
+  } 
+  /*
+  else {
+    OType* out_dptr = reinterpret_cast<OType*>(out_data.dptr_);
+    bool addto = false;
+
+
+
+
+    // TODO what is this doing?
     if (config.Mnext > 1) {
       // small_dptr[] is N*Mnext*sizeof(DType) bytes
-      small_dptr = reinterpret_cast<OType*>(workspace.dptr_);
+      out_dptr = reinterpret_cast<OType*>(workspace.dptr_);
       addto = false;
       // Check that the workspace is contigiuous
       CHECK_EQ(workspace.CheckContiguous(), true);
@@ -76,14 +84,17 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
       CHECK_GE(workspace.size(0), config.workspace_size);
     }
 
+
+
+
     const int by = (config.kernel_1.do_transpose) ?
       config.kernel_1.blockDim.x : config.kernel_1.blockDim.y;
     const bool do_unroll = ( config.M / (by*config.Mnext) >= unroll_reduce );
     KERNEL_UNROLL_SWITCH(do_unroll, unroll_reduce, UNROLL, {
-      reduce_kernel<Reducer, ndim, AType, DType, OType, OP, UNROLL>
+      reduce_kernel<Reducer, ndim, OType, DType, OType, OP, UNROLL>
       <<< config.kernel_1.gridDim, config.kernel_1.blockDim, config.kernel_1.shMemSize, stream>>>(
-        config.N, config.M, addto, big.dptr<DType>(), small_dptr, big.shape_.get<ndim>(),
-        small.shape_.get<ndim>(), config.rshape.get<ndim>(), config.rstride.get<ndim>(),
+        config.N, config.M, addto, in_data.dptr<DType>(), out_dptr, in_data.shape_.get<ndim>(),
+        out_data.shape_.get<ndim>(), config.rshape.get<ndim>(), config.rstride.get<ndim>(),
         config.Mnext, config.kernel_1.do_transpose);
     });
     MSHADOW_CUDA_POST_KERNEL_CHECK(reduce_kernel);
@@ -91,14 +102,14 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
     if (config.Mnext > 1) {
       reduce_lines_kernel<Reducer, OType>
       <<< config.kernel_2.gridSize, config.kernel_2.blockSize, 0, stream >>>
-        (config.N, config.Mnext, req == kAddTo, config.N, small_dptr, small.dptr<OType>());
+        (config.N, config.Mnext, false, config.N, out_dptr, reinterpret_cast<OType*>(out_data.dptr_));
       MSHADOW_CUDA_POST_KERNEL_CHECK(reduce_lines_kernel);
     }
   }
 
-*/
 
 
+  */
 
 
 
