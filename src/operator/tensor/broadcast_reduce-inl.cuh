@@ -28,7 +28,7 @@
 
 using namespace mshadow::cuda;
 
-template<typename Reducer, int ndim, typename AType, typename DType, typename OType, typename OP, int unroll>
+template<typename Reducer, int ndim, typename AType, typename DType, typename OType, typename OP, int unroll, bool use_index = false>
 __launch_bounds__(nthread_reduce)
 __global__ void reduce_kernel(const int N, const int M, const bool addto,
                               const DType* __restrict big, OType *small,
@@ -64,16 +64,19 @@ __global__ void reduce_kernel(const int N, const int M, const bool addto,
           AType tmp[unroll];
           #pragma unroll
           for (int u=0;u < unroll;u++) {
-            if (k + u*by < Mend) {
-              tmp[u] = OP::Map(big[idx_big[u]]);
-            }
-          }
-          #pragma unroll
-          for (int u=0;u < unroll;u++) {
             int axis_idx = k - tidy - Mstart + u;
             int ku = k+ u;
             printf("axis_idx is: %d\n", axis_idx);
             printf("kkkkkku is: %d\n", ku);
+
+            if (k + u*by < Mend) {
+              tmp[u] = OP::Map(big[idx_big[u]]);
+              if (use_index)
+                *(reinterpret_cast<size_t*>(&tmp[u])) = ku;
+            }
+          }
+          #pragma unroll
+          for (int u=0;u < unroll;u++) {
             if (k + u*by < Mend) Reducer::Reduce(val, tmp[u], residual);
           }
         }
