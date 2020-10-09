@@ -60,6 +60,7 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
   std::cout << "n is: " << config.N << std::endl;
   
   if (config.M == 1) {
+    std::cout << "boom boom uuuuuuu" << std::endl;
     reduce_kernel_M1<Reducer, NDim, OType, DType, OType, mxnet::op::mshadow_op::myOp<DType, OType>>
     <<< config.kernel_1.gridDim, config.kernel_1.blockDim, 0, stream >>>(
       config.N, false, in_data.dptr<DType>(), reinterpret_cast<OType*>(out_data.dptr_), in_data.shape_.get<NDim>(),
