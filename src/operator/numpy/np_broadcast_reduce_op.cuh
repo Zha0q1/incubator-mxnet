@@ -100,7 +100,7 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
       config.kernel_1.blockDim.x : config.kernel_1.blockDim.y;
     const bool do_unroll = ( config.M / (by*config.Mnext) >= unroll_reduce );
     KERNEL_UNROLL_SWITCH(do_unroll, unroll_reduce, UNROLL, {
-      reduce_kernel<Reducer, NDim, OType, DType, OType, OP, UNROLL>
+      reduce_kernel<Reducer, NDim, OType, DType, OType, mxnet::op::mshadow_op::myOp<DType, OType>, UNROLL>
       <<< config.kernel_1.gridDim, config.kernel_1.blockDim, config.kernel_1.shMemSize, stream>>>(
         config.N, config.M, addto, in_data.dptr<DType>(), out_dptr, in_data.shape_.get<NDim>(),
         out_data.shape_.get<NDim>(), config.rshape.get<NDim>(), config.rstride.get<NDim>(),
