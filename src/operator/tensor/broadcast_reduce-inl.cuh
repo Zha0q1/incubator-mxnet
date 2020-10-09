@@ -54,7 +54,7 @@ __global__ void reduce_kernel(const int N, const int M, const bool addto,
       AType val, residual;
       Reducer::SetInitValue(val, residual);
       if (idx < N) {
-        printf("iiiiiiidx is: %d\n", idx);
+        //printf("iiiiiiidx is: %d\n", idx);
         for (int k = tidy + Mstart; k < Mend; k += by*unroll) {
           int idx_big[unroll];
           #pragma unroll
@@ -64,10 +64,10 @@ __global__ void reduce_kernel(const int N, const int M, const bool addto,
           AType tmp[unroll];
           #pragma unroll
           for (int u=0;u < unroll;u++) {
-            size_t axis_idx = k - tidy - Mstart + u;
+            //size_t axis_idx = k - tidy - Mstart + u;
             size_t ku = k + u*by;
-            printf("axis_idx is: %d\n", axis_idx);
-            printf("kkkkkku is: %d\n", ku);
+            //printf("axis_idx is: %d\n", axis_idx);
+            //printf("kkkkkku is: %d\n", ku);
 
             if (k + u*by < Mend) {
               tmp[u] = OP::Map(big[idx_big[u]]);
@@ -205,7 +205,7 @@ __global__ void reduce_kernel(const int N, const int M, const bool addto,
 }
 
 // Simple reduction of lines when M is small
-template<typename Reducer, typename DType, bool use_index = false>
+template<typename Reducer, typename DType>
 __launch_bounds__(kMaxThreadsPerBlock)
 __global__ void reduce_lines_kernel(const int N, const int M, const bool addto,
   const int small_in_stride, DType* __restrict small_in, DType *small_out) {
@@ -214,10 +214,6 @@ __global__ void reduce_lines_kernel(const int N, const int M, const bool addto,
     DType val, residual;
     Reducer::SetInitValue(val, residual);
     for (int k = 0; k < M; k++) {
-      //this is wrong
-      //printf("MMMMM is: %d\n", k);
-      //if (use_index)
-      //  *(reinterpret_cast<size_t*>(&small_in[idx + k*small_in_stride])) = k;
       Reducer::Reduce(val, small_in[idx + k*small_in_stride], residual);
     }
 
@@ -234,11 +230,11 @@ __launch_bounds__(kMaxThreadsPerBlock)
 __global__ void reduce_kernel_M1(const int N, const bool addto,
                                 const DType* __restrict big, OType *small, const Shape<ndim> bshape,
                                 const Shape<ndim> sshape) {
-  printf("Hello from block %d, thread %d\n", blockIdx.x, threadIdx.x);
+  //printf("Hello from block %d, thread %d\n", blockIdx.x, threadIdx.x);
   for (int idx = threadIdx.x + blockIdx.x*blockDim.x; idx < N; idx += blockDim.x*gridDim.x) {
     Shape<ndim> coord = mxnet_op::unravel(idx, sshape);
     int j = mxnet_op::ravel(coord, bshape);
-    printf("j is: %d\n", j);
+    //printf("j is: %d\n", j);
     AType val, residual, temp = OP::Map(big[j]);
     Reducer::SetInitValue(val, residual);
     Reducer::Reduce(val, temp, residual);

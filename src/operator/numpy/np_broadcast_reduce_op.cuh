@@ -45,7 +45,7 @@ using namespace broadcast;
 template<typename Reducer, int NDim, typename DType, typename OType>
 void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out_data,
                           const Tensor<gpu, 1, char>& workspace) {
-  std::cout << "dududu" << std::endl;
+  //std::cout << "dududu" << std::endl;
   
 //   if (req == kNullOp) return;
 
@@ -73,11 +73,11 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
   
 
   
-  std::cout << "m is: " << config.M << std::endl;
-  std::cout << "n is: " << config.N << std::endl;
+  //std::cout << "m is: " << config.M << std::endl;
+  //std::cout << "n is: " << config.N << std::endl;
   
   if (config.M == 1) {
-    std::cout << "boom boom uuuuuuu" << std::endl;
+    //std::cout << "boom boom uuuuuuu" << std::endl;
     reduce_kernel_M1<Reducer, NDim, OType, DType, OType, mxnet::op::mshadow_op::myOp<DType, OType>>
     <<< config.kernel_1.gridDim, config.kernel_1.blockDim, 0, stream >>>(
       config.N, false, in_data.dptr<DType>(), reinterpret_cast<OType*>(out_data.dptr_), in_data.shape_.get<NDim>(),
@@ -88,12 +88,12 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
     OType* out_dptr = reinterpret_cast<OType*>(out_data.dptr_);
     bool addto = false;
 
-    std::cout << "boom boom uuuiiiiiii" << std::endl;
+    //std::cout << "boom boom uuuiiiiiii" << std::endl;
 
 
     // TODO what is this doing?
     if (config.Mnext > 1) {
-      std::cout << "boom boom u555" << std::endl;
+      //std::cout << "boom boom u555" << std::endl;
       // small_dptr[] is N*Mnext*sizeof(DType) bytes
       out_dptr = reinterpret_cast<OType*>(workspace.dptr_);
       addto = false;
@@ -110,7 +110,7 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
       config.kernel_1.blockDim.x : config.kernel_1.blockDim.y;
     const bool do_unroll = ( config.M / (by*config.Mnext) >= unroll_reduce );
     KERNEL_UNROLL_SWITCH(do_unroll, unroll_reduce, UNROLL, {
-      std::cout << "boom boom u77777777" << std::endl;
+      //std::cout << "boom boom u77777777" << std::endl;
       reduce_kernel<Reducer, NDim, OType, DType, OType, mxnet::op::mshadow_op::myOp<DType, OType>, UNROLL, true>
       <<< config.kernel_1.gridDim, config.kernel_1.blockDim, config.kernel_1.shMemSize, stream>>>(
         config.N, config.M, addto, in_data.dptr<DType>(), out_dptr, in_data.shape_.get<NDim>(),
@@ -121,8 +121,8 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
 
     if (config.Mnext > 1) {
 
-      std::cout << "boom boom u9999" << std::endl;
-      reduce_lines_kernel<Reducer, OType, true>
+      //std::cout << "boom boom u9999" << std::endl;
+      reduce_lines_kernel<Reducer, OType>
       <<< config.kernel_2.gridSize, config.kernel_2.blockSize, 0, stream >>>
         (config.N, config.Mnext, false, config.N, out_dptr, reinterpret_cast<OType*>(out_data.dptr_));
       MSHADOW_CUDA_POST_KERNEL_CHECK(reduce_lines_kernel);
