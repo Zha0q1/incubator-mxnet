@@ -40,7 +40,7 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
   
 //   if (req == kNullOp) return;
   cudaStream_t stream = Stream<gpu>::GetStream(s);
-  ReduceImplConfig config(out_data.shape_, in_data.shape_, nullptr, nullptr, sizeof(OType));
+  ReduceImplConfig config(out_data.shape_, in_data.shape_, nullptr, nullptr, sizeof(DType));
 //   if (safe_acc) {
 //     MXNET_ACC_TYPE_SWITCH(mshadow::DataType<DType>::kFlag, DataType, AType, {
 //       typedef typename std::conditional<safe_acc, AType, DataType>::type AccType;
@@ -57,6 +57,7 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
 //   }
   
   std::cout << "m is: " << config.M << std::endl;
+  std::cout << "n is: " << config.N << std::endl;
   
   if (config.M == 1) {
     reduce_kernel_M1<Reducer, NDim, OType, DType, OType, mxnet::op::mshadow_op::myOp<DType, OType>>
@@ -65,7 +66,7 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
       out_data.shape_.get<NDim>());
     MSHADOW_CUDA_POST_KERNEL_CHECK(reduce_kernel_M1);
   }
-  std::cout << "boom boom " << config.M << std::endl;
+  std::cout << "boom boom " << std::endl;
   /*
   else {
     OType* out_dptr = reinterpret_cast<OType*>(out_data.dptr_);

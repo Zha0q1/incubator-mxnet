@@ -222,9 +222,11 @@ __launch_bounds__(kMaxThreadsPerBlock)
 __global__ void reduce_kernel_M1(const int N, const bool addto,
                                 const DType* __restrict big, OType *small, const Shape<ndim> bshape,
                                 const Shape<ndim> sshape) {
+  printf("Hello from block %d, thread %d\n", blockIdx.x, threadIdx.x);
   for (int idx = threadIdx.x + blockIdx.x*blockDim.x; idx < N; idx += blockDim.x*gridDim.x) {
     Shape<ndim> coord = mxnet_op::unravel(idx, sshape);
     int j = mxnet_op::ravel(coord, bshape);
+    printf("j is: %d\n", j);
     AType val, residual, temp = OP::Map(big[j]);
     Reducer::SetInitValue(val, residual);
     Reducer::Reduce(val, temp, residual);
