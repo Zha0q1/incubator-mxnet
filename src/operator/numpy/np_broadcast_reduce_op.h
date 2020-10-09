@@ -511,8 +511,8 @@ struct argmax_parse {
 
 
 template <typename Reducer, int NDim, typename DType, typename OType>
-void NumpyArgMinMaxReduce(mshadow::Stream<cpu> *s, const TBlob& in_data, const TBlob& out_data){
-                          //const mshadow::Tensor<cpu, 1, char>& workspace) {
+void NumpyArgMinMaxReduce(mshadow::Stream<cpu> *s, const TBlob& in_data, const TBlob& out_data,
+                          const mshadow::Tensor<cpu, 1, char>& workspace) {
   using namespace mshadow;
   Shape<NDim> rshape, rstride;
   diffuuu(out_data.shape_.get<NDim>(), in_data.shape_.get<NDim>(), &rshape, &rstride);
@@ -562,12 +562,12 @@ void NumpyArgMinMaxCompute(const nnvm::NodeAttrs& attrs,
   const TBlob out_data = dummy.reshape(dst_shape);
   // switch dim
   BROADCAST_NDIM_SWITCH(dst_shape.ndim(), NDim, {
-    //size_t workspace_size = broadcast::ReduceWorkspaceSize(
-    //   s, out_data.shape_, req[0], in_data.shape_, sizeof(OType));
-    //Tensor<xpu, 1, char> workspace =
-    //   ctx.requested[0].get_space_typed<xpu, 1, char>(Shape1(workspace_size), s);
+    size_t workspace_size = broadcast::ReduceWorkspaceSize(
+      s, out_data.shape_, req[0], in_data.shape_, sizeof(OType));
+    Tensor<xpu, 1, char> workspace =
+      ctx.requested[0].get_space_typed<xpu, 1, char>(Shape1(workspace_size), s);
 
-    NumpyArgMinMaxReduce<mshadow_op::argmax, NDim, DType, OType>(s, in_data, out_data);
+    NumpyArgMinMaxReduce<mshadow_op::argmax, NDim, DType, OType>(s, in_data, out_data, workspace);
 
     //cpu version
 
