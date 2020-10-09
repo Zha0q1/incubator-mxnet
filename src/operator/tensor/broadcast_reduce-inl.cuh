@@ -60,7 +60,7 @@ __global__ void reduce_kernel(const int N, const int M, const bool addto,
           for (int u=0;u < unroll;u++) {
             idx_big[u] = idx_big0 + mxnet_op::unravel_dot(k + u*by, big_shape, big_stride);
           }
-          DType tmp[unroll];
+          AType tmp[unroll];
           #pragma unroll
           for (int u=0;u < unroll;u++) {
             if (k + u*by < Mend) {
@@ -69,7 +69,7 @@ __global__ void reduce_kernel(const int N, const int M, const bool addto,
           }
           #pragma unroll
           for (int u=0;u < unroll;u++) {
-            if (k + u*by < Mend) Reducer::Reduce(val, AType(tmp[u]), residual);
+            if (k + u*by < Mend) Reducer::Reduce(val, tmp[u], residual);
           }
         }
       }
