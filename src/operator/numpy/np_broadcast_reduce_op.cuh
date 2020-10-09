@@ -65,6 +65,7 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
       out_data.shape_.get<NDim>());
     MSHADOW_CUDA_POST_KERNEL_CHECK(reduce_kernel_M1);
   }
+  std::cout << "boom boom " << config.M << std::endl;
   /*
   else {
     OType* out_dptr = reinterpret_cast<OType*>(out_data.dptr_);
