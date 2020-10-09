@@ -64,8 +64,8 @@ __global__ void reduce_kernel(const int N, const int M, const bool addto,
           AType tmp[unroll];
           #pragma unroll
           for (int u=0;u < unroll;u++) {
-            int axis_idx = k - tidy - Mstart + u;
-            int ku = k+ u;
+            size_t axis_idx = k - tidy - Mstart + u;
+            size_t ku = k+ u;
             printf("axis_idx is: %d\n", axis_idx);
             printf("kkkkkku is: %d\n", ku);
 
