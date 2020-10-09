@@ -585,9 +585,9 @@ void NumpyArgMinMaxCompute(const nnvm::NodeAttrs& attrs,
     //    s, out_data, req[0], workspace, in_data);
   });
 
-  //for (int i=0; i<out.shape_.Size(); i++) {
-  //  std::cout << (static_cast<OType*>(out_data.dptr_) + i)->num << " " << (static_cast<OType*>(out_data.dptr_) + i)->idx  << std::endl;
-  //}
+  for (int i=0; i<out.shape_.Size(); i++) {
+   std::cout << (static_cast<OType*>(out_data.dptr_) + i)->num << " " << (static_cast<OType*>(out_data.dptr_) + i)->idx  << std::endl;
+  }
 
   // parse the indices from the dummy tensor back to the actual output tensor
   using namespace mxnet_op;

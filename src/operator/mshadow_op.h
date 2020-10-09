@@ -1607,6 +1607,7 @@ struct argmax {
   template<typename DType>
   MSHADOW_XINLINE static void SetInitValue(DType &initv) { // NOLINT(*)
     initv.num = -1000000; //TODO zhaoqi
+    initv.idx = 0;
   }
   /*!
    *\brief set the initial value during reduction
