@@ -54,6 +54,7 @@ __global__ void reduce_kernel(const int N, const int M, const bool addto,
       AType val, residual;
       Reducer::SetInitValue(val, residual);
       if (idx < N) {
+        printf("iiiiiiidx is: %d\n", idx);
         for (int k = tidy + Mstart; k < Mend; k += by*unroll) {
           int idx_big[unroll];
           #pragma unroll
