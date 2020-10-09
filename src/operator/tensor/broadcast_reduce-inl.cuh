@@ -227,7 +227,7 @@ __global__ void reduce_kernel_M1(const int N, const bool addto,
     int j = mxnet_op::ravel(coord, bshape);
     AType val, residual, temp = OP::Map(big[j]);
     Reducer::SetInitValue(val, residual);
-    Reducer::Reduce(val, OP::Map(big[j]), residual);
+    Reducer::Reduce(val, temp, residual);
     Reducer::Finalize(val, residual);
     assign(&small[idx], addto, OType(val));
   }
