@@ -58,13 +58,13 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
   
   std::cout << "m is: " << config.M << std::endl;
   
-  if (config.M == 1) {
-    reduce_kernel_M1<Reducer, ndim, OType, DType, OType, OP>
+  /*if (config.M == 1) {
+    reduce_kernel_M1<Reducer, ndim, OType, DType, OType, mxnet::op::mshadow_op::myOp<DType, OType>>
     <<< config.kernel_1.gridDim, config.kernel_1.blockDim, 0, stream >>>(
       config.N, false, in_data.dptr<DType>(), reinterpret_cast<OType*>(out_data.dptr_), in_data.shape_.get<ndim>(),
       out_data.shape_.get<ndim>());
     MSHADOW_CUDA_POST_KERNEL_CHECK(reduce_kernel_M1);
-  } 
+  } */
   /*
   else {
     OType* out_dptr = reinterpret_cast<OType*>(out_data.dptr_);
