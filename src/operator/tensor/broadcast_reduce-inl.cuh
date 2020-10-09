@@ -225,7 +225,6 @@ __global__ void reduce_kernel_M1(const int N, const bool addto,
   for (int idx = threadIdx.x + blockIdx.x*blockDim.x; idx < N; idx += blockDim.x*gridDim.x) {
     Shape<ndim> coord = mxnet_op::unravel(idx, sshape);
     int j = mxnet_op::ravel(coord, bshape);
-    std::cout << "j " << j << std::endl;
     AType val, residual, temp = OP::Map(big[j]);
     Reducer::SetInitValue(val, residual);
     Reducer::Reduce(val, temp, residual);
