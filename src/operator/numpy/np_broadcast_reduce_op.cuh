@@ -93,6 +93,7 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
 
     // TODO what is this doing?
     if (config.Mnext > 1) {
+      std::cout << "boom boom u555" << std::endl;
       // small_dptr[] is N*Mnext*sizeof(DType) bytes
       out_dptr = reinterpret_cast<OType*>(workspace.dptr_);
       addto = false;
@@ -119,6 +120,8 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
     MSHADOW_CUDA_POST_KERNEL_CHECK(reduce_kernel);
 
     if (config.Mnext > 1) {
+
+      std::cout << "boom boom u9999" << std::endl;
       reduce_lines_kernel<Reducer, OType>
       <<< config.kernel_2.gridSize, config.kernel_2.blockSize, 0, stream >>>
         (config.N, config.Mnext, false, config.N, out_dptr, reinterpret_cast<OType*>(out_data.dptr_));
