@@ -214,9 +214,10 @@ __global__ void reduce_lines_kernel(const int N, const int M, const bool addto,
     DType val, residual;
     Reducer::SetInitValue(val, residual);
     for (int k = 0; k < M; k++) {
-      printf("MMMMM is: %d\n", k);
-      if (use_index)
-        *(reinterpret_cast<size_t*>(&small_in[idx + k*small_in_stride])) = k;
+      //this is wrong
+      //printf("MMMMM is: %d\n", k);
+      //if (use_index)
+      //  *(reinterpret_cast<size_t*>(&small_in[idx + k*small_in_stride])) = k;
       Reducer::Reduce(val, small_in[idx + k*small_in_stride], residual);
     }
 
