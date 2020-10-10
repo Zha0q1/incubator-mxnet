@@ -64,15 +64,10 @@ __global__ void reduce_kernel(const int N, const int M, const bool addto,
           AType tmp[unroll];
           #pragma unroll
           for (int u=0;u < unroll;u++) {
-            //size_t axis_idx = k - tidy - Mstart + u;
-            size_t ku = k + u*by;
-            //printf("axis_idx is: %d\n", axis_idx);
-            //printf("kkkkkku is: %d\n", ku);
-
             if (k + u*by < Mend) {
               tmp[u] = OP::Map(big[idx_big[u]]);
               if (use_index)
-                *(reinterpret_cast<size_t*>(&tmp[u])) = ku;
+                *(reinterpret_cast<int*>(&tmp[u])) = k + u*by;
             }
           }
           #pragma unroll

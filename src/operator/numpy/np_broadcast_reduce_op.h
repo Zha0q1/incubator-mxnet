@@ -531,6 +531,21 @@ void NumpyArgMinMaxReduce(mshadow::Stream<cpu> *s, const TBlob& in_data, const T
 #include "np_broadcast_reduce_op.cuh"
 #endif
 
+// template<typename>
+// size_t GetNumSize() {
+//   return 0;
+// }
+
+// template<>
+// size_t GetNumSize<cpu>() {
+//   return sizeof(mxnet::op::mshadow_op::Num<size_t, float>);
+// }
+
+// template<>
+// size_t GetNumSize<cpu>() {
+//    return sizeof(mxnet::op::mshadow_op::Num<int, float>);
+// }
+
 template<typename xpu>
 void NumpyArgMinMaxCompute(const nnvm::NodeAttrs& attrs,
                         const OpContext& ctx,
@@ -544,7 +559,7 @@ void NumpyArgMinMaxCompute(const nnvm::NodeAttrs& attrs,
   TBlob out = outputs[0];
   // define in type and out type
   typedef float DType;
-  typedef mxnet::op::mshadow_op::Num<size_t, float> OType;
+  typedef mxnet::op::mshadow_op::Num<int, float> OType;
   // request a work space
   size_t workspace_size = sizeof(OType) * out.shape_.Size();
   Tensor<xpu, 1, char> workspace = 
