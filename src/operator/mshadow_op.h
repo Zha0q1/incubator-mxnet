@@ -1598,7 +1598,7 @@ struct argmax {
    */
   template<typename DType>
   MSHADOW_XINLINE static void SetInitValue(DType &initv) { // NOLINT(*)
-    initv.num = mshadow::red::limits::NegInfValue<DType>();
+    initv.num = mshadow::red::limits::NegInfValue<decltype(initv.num)>();
     initv.idx = 0;
   }
   /*!
