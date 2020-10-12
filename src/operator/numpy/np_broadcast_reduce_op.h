@@ -493,9 +493,9 @@ void NumpyArgMinMaxReduce(mshadow::Stream<cpu> *s, const TBlob& in_data, const T
 }
 
 // CPU reduce won't use any extra workspace as gpu reduce does
-void XPUWorkspaceSizeRest(Stream<gpu> *s, size_t& workspace_size) {}
+void XPUWorkspaceSizeRest(mshadow::Stream<gpu> *s, size_t& workspace_size) {}
 
-void XPUWorkspaceSizeRest(Stream<cpu> *s, size_t& workspace_size) {
+void XPUWorkspaceSizeRest(mshadow::Stream<cpu> *s, size_t& workspace_size) {
   workspace_size = 0;
 }
 
