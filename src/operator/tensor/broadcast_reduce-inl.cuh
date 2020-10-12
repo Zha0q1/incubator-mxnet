@@ -54,7 +54,6 @@ __global__ void reduce_kernel(const int N, const int M, const bool addto,
       AType val, residual;
       Reducer::SetInitValue(val, residual);
       if (idx < N) {
-        //printf("iiiiiiidx is: %d\n", idx);
         for (int k = tidy + Mstart; k < Mend; k += by*unroll) {
           int idx_big[unroll];
           #pragma unroll
@@ -203,7 +202,7 @@ __global__ void reduce_kernel(const int N, const int M, const bool addto,
 template<typename Reducer, typename DType>
 __launch_bounds__(kMaxThreadsPerBlock)
 __global__ void reduce_lines_kernel(const int N, const int M, const bool addto,
-  const int small_in_stride, DType* __restrict small_in, DType *small_out) {
+  const int small_in_stride, const DType* __restrict small_in, DType *small_out) {
   for (int idx = threadIdx.x + blockIdx.x*blockDim.x; idx < N; idx += blockDim.x*gridDim.x) {
 
     DType val, residual;

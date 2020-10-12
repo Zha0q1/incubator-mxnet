@@ -58,7 +58,7 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
     OType* out_dptr = reinterpret_cast<OType*>(out_data.dptr_);
     bool addto = false;
     if (config.Mnext > 1) {
-      // small_dptr[] is N*Mnext*sizeof(DType) bytes
+      // out_dptr[] is N*Mnext*sizeof(DType) bytes
       out_dptr = reinterpret_cast<OType*>(workspace.dptr_);
       addto = false;
       // Check that the workspace is contigiuous
@@ -70,8 +70,7 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
       config.kernel_1.blockDim.x : config.kernel_1.blockDim.y;
     const bool do_unroll = ( config.M / (by*config.Mnext) >= unroll_reduce );
     KERNEL_UNROLL_SWITCH(do_unroll, unroll_reduce, UNROLL, {
-      //std::cout << "boom boom u77777777" << std::endl;
-      reduce_kernel<Reducer, NDim, OType, DType, OType, mxnet::op::mshadow_op::myOp<DType, OType>, UNROLL, true>
+      reduce_kernel<Reducer, NDim, OType, DType, OType, mxnet::op::mshadow_op::arg_min_max_map<DType, OType>, UNROLL, true>
       <<< config.kernel_1.gridDim, config.kernel_1.blockDim, config.kernel_1.shMemSize, stream>>>(
         config.N, config.M, addto, in_data.dptr<DType>(), out_dptr, in_data.shape_.get<NDim>(),
         out_data.shape_.get<NDim>(), config.rshape.get<NDim>(), config.rstride.get<NDim>(),
