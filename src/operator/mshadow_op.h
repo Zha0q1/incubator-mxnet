@@ -1598,7 +1598,7 @@ struct argmax {
    */
   template<typename DType>
   MSHADOW_XINLINE static void SetInitValue(DType &initv) { // NOLINT(*)
-    initv.num = -100000;//std::numeric_limits<decltype(initv.num)>::min;
+    initv.num = limits::NegInfValue<DType>();
     initv.idx = 0;
   }
   /*!
