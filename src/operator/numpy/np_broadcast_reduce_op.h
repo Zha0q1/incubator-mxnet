@@ -496,7 +496,7 @@ void NumpyArgMinMaxReduce(mshadow::Stream<cpu> *s, const TBlob& in_data, const T
 #include "np_broadcast_reduce_op.cuh"
 #endif
 
-template<typename xpu>
+template<typename xpu, typename IType>
 void NumpyArgMinMaxCompute(const nnvm::NodeAttrs& attrs,
                         const OpContext& ctx,
                         const std::vector<TBlob>& inputs,
@@ -510,7 +510,7 @@ void NumpyArgMinMaxCompute(const nnvm::NodeAttrs& attrs,
   TBlob in = inputs[0];
   MSHADOW_TYPE_SWITCH_WITH_BOOL(in.type_flag_, DType, {
     // define OType
-    typedef mxnet::op::mshadow_op::Num<int, DType> OType;
+    typedef mxnet::op::mshadow_op::Num<IType, DType> OType;
     // request a work space
     size_t workspace_size = sizeof(OType) * out.shape_.Size();
     Tensor<xpu, 1, char> workspace = 
