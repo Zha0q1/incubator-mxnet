@@ -504,10 +504,36 @@ void NumpyArgMinMaxCompute(const nnvm::NodeAttrs& attrs,
                         const std::vector<TBlob>& outputs) {
   using namespace mshadow;
   using namespace mshadow::expr;
+  if (req[0] == kNullOp) return;
+  // parse param
   const ReduceAxisParam& param = nnvm::get<ReduceAxisParam>(attrs.parsed);
   mshadow::Stream<xpu> *s = ctx.get_stream<xpu>();
   TBlob out = outputs[0];
   TBlob in = inputs[0];
+
+  // do some shape checks
+  if (inputs[0].shape_.ndim() != 0) {
+    if (param.axis.has_value()) {
+      // cannot do argmax in an empty dimension
+      CHECK_NE(inputs[0].shape_[axis], 0)
+          << "searching input tensor of shape " << inputs[0].shape_
+          << " along axis = " << axis << " of zero dim-size is not allowed";
+    } else {
+      // cannot do argmax on an empty array
+      CHECK_NE(inputs[0].shape_.Size(), 0U) << "attempt to search an empty sequence";
+    }
+  }
+  if (input.shape_.Size() == 0U) return;  // zero-size tensor
+  // prepare shape
+  dmlc::optional<mxnet::Tuple<int>> axes;
+  if (param.axis.has_value()) {
+    mxnet::Tuple<int> t({param.axis.value()});
+    axes = dmlc::optional<mxnet::Tuple<int>>(t);
+  }
+  TShape small;
+  small = NumpyReduceAxesShapeImpl(in.shape_, axes, true);
+  mxnet::TShape src_shape, dst_shape;
+  BroadcastReduceShapeCompact(in.shape_, small, &src_shape, &dst_shape);
   MSHADOW_TYPE_SWITCH_WITH_BOOL(in.type_flag_, DType, {
     // define OType
     typedef mxnet::op::mshadow_op::IndexedNum<IType, DType> OType;
@@ -518,17 +544,7 @@ void NumpyArgMinMaxCompute(const nnvm::NodeAttrs& attrs,
     // set up intermediate output
     TBlob intermediate = out;
     intermediate.dptr_ = (int64_t*)workspace.dptr_;
-    // get the outputshape
-    dmlc::optional<mxnet::Tuple<int>> axes;
-    if (param.axis.has_value()) {
-      mxnet::Tuple<int> t({param.axis.value()});
-      axes = dmlc::optional<mxnet::Tuple<int>>(t);
-    }
-    TShape small;
-    small = NumpyReduceAxesShapeImpl(in.shape_, axes, true);
     // reshape the input and intermediate output tensor
-    mxnet::TShape src_shape, dst_shape;
-    BroadcastReduceShapeCompact(in.shape_, small, &src_shape, &dst_shape);
     const TBlob in_data = in.reshape(src_shape);
     const TBlob intermediate_out_data = intermediate.reshape(dst_shape);
     // switch dim
