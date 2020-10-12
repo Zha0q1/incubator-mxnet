@@ -133,7 +133,7 @@ struct IndexedNum {
   IType idx;
   DType num;
 
-  Num& operator+=(const Num& rhs){
+  IndexedNum& operator+=(const IndexedNum& rhs){
     return *this;
   }  
 };
