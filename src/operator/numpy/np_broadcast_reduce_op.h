@@ -510,20 +510,19 @@ void NumpyArgMinMaxCompute(const nnvm::NodeAttrs& attrs,
   mshadow::Stream<xpu> *s = ctx.get_stream<xpu>();
   TBlob out = outputs[0];
   TBlob in = inputs[0];
-
   // do some shape checks
-  if (inputs[0].shape_.ndim() != 0) {
+  if (in.shape_.ndim() != 0) {
     if (param.axis.has_value()) {
       // cannot do argmax in an empty dimension
-      CHECK_NE(inputs[0].shape_[axis], 0)
+      CHECK_NE(in.shape_[axis], 0)
           << "searching input tensor of shape " << inputs[0].shape_
           << " along axis = " << axis << " of zero dim-size is not allowed";
     } else {
       // cannot do argmax on an empty array
-      CHECK_NE(inputs[0].shape_.Size(), 0U) << "attempt to search an empty sequence";
+      CHECK_NE(in.shape_.Size(), 0U) << "attempt to search an empty sequence";
     }
   }
-  if (input.shape_.Size() == 0U) return;  // zero-size tensor
+  if (in.shape_.Size() == 0U) return;  // zero-size tensor
   // prepare shape
   dmlc::optional<mxnet::Tuple<int>> axes;
   if (param.axis.has_value()) {
