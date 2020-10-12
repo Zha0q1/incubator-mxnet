@@ -471,7 +471,7 @@ void NumpySearchAxisCompute(const nnvm::NodeAttrs& attrs,
   });
 }
 
-struct argmax_parse {
+struct arg_min_max_parse {
   template <typename DType, typename OType>
   MSHADOW_XINLINE static void Map(index_t i,
                                   OType* out_data,
@@ -487,7 +487,7 @@ void NumpyArgMinMaxReduce(mshadow::Stream<cpu> *s, const TBlob& in_data, const T
   Shape<NDim> rshape, rstride;
   broadcast::diff<NDim>(out_data.shape_.get<NDim>(), in_data.shape_.get<NDim>(), &rshape, &rstride);
   size_t N = out_data.shape_.Size(), M = rshape.Size();
-  broadcast::seq_reduce_compute<Reducer, NDim, OType, DType, OType, mxnet::op::mshadow_op::myOp<DType, OType>, true> (
+  broadcast::seq_reduce_compute<Reducer, NDim, OType, DType, OType, mxnet::op::mshadow_op::arg_min_max_map<DType, OType>, true> (
     N, M, false, in_data.dptr<DType>(), static_cast<OType*>(out_data.dptr_),
     in_data.shape_.get<NDim>(), out_data.shape_.get<NDim>(), rshape, rstride);
 }
@@ -510,7 +510,7 @@ void NumpyArgMinMaxCompute(const nnvm::NodeAttrs& attrs,
   TBlob in = inputs[0];
   MSHADOW_TYPE_SWITCH_WITH_BOOL(in.type_flag_, DType, {
     // define OType
-    typedef mxnet::op::mshadow_op::Num<IType, DType> OType;
+    typedef mxnet::op::mshadow_op::IndexedNum<IType, DType> OType;
     // request a work space
     size_t workspace_size = sizeof(OType) * out.shape_.Size();
     Tensor<xpu, 1, char> workspace = 
@@ -541,7 +541,7 @@ void NumpyArgMinMaxCompute(const nnvm::NodeAttrs& attrs,
     });
     // parse the indices from the intermediate tensor back to the actual output tensor
     using namespace mxnet_op;
-    Kernel<argmax_parse, xpu>::Launch(
+    Kernel<arg_min_max_parse, xpu>::Launch(
         s, out.shape_.Size(), outputs[0].dptr<int64_t>(),
         static_cast<OType*>(intermediate_out_data.dptr_));
   });

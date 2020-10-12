@@ -129,21 +129,17 @@ using std::is_integral;
 MXNET_UNARY_MATH_OP_NC(identity, a);
 
 template <typename IType, typename DType>
-struct Num {
-  //size_t idx;
-  //float num;
+struct IndexedNum {
   IType idx;
   DType num;
 
-
   Num& operator+=(const Num& rhs){
     return *this;
-  }
-  
+  }  
 };
 
 template<typename DType, typename OType> 
-struct myOp : public mxnet_op::tunable { 
+struct arg_min_max_map : public mxnet_op::tunable { 
   MSHADOW_XINLINE static OType Map(DType a) {
     OType temp;
     temp.num = a;
@@ -1555,13 +1551,7 @@ struct sum {
   }
 };
 
-
-
-
-
-
-
-/*! \brief sum reducer */
+/*! \brief arg max reducer */
 struct argmax {
   /*! \brief do reduction into dst */
   template<typename AType, typename DType>
@@ -1608,7 +1598,7 @@ struct argmax {
    */
   template<typename DType>
   MSHADOW_XINLINE static void SetInitValue(DType &initv) { // NOLINT(*)
-    initv.num = -1000000; //TODO zhaoqi
+    initv.num = std::numeric_limits<decltype(initv.num)>::min;
     initv.idx = 0;
   }
   /*!
@@ -1619,27 +1609,6 @@ struct argmax {
     SetInitValue(initv);
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 struct nanprod_grad : public mxnet_op::tunable {
   template<typename DType>

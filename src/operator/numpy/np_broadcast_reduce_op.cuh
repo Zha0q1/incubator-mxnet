@@ -45,40 +45,10 @@ using namespace broadcast;
 template<typename Reducer, int NDim, typename DType, typename OType>
 void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out_data,
                           const Tensor<gpu, 1, char>& workspace) {
-  //std::cout << "dududu" << std::endl;
-  
-//   if (req == kNullOp) return;
-
-
-
-
-
  cudaStream_t stream = Stream<gpu>::GetStream(s);
  ReduceImplConfig config(out_data.shape_, in_data.shape_, nullptr, nullptr, sizeof(OType));
-//   if (safe_acc) {
-//     MXNET_ACC_TYPE_SWITCH(mshadow::DataType<DType>::kFlag, DataType, AType, {
-//       typedef typename std::conditional<safe_acc, AType, DataType>::type AccType;
-//       MSHADOW_TYPE_SWITCH(small.type_flag_, OType, {
-//         typedef typename std::conditional<safe_acc, OType, DataType>::type OutType;
-//         config = ReduceImplConfig(small.shape_, big.shape_, nullptr, nullptr,
-//                                   sizeof(AccType));
-//         ReduceImpl<Reducer, ndim, AccType, DataType, OutType, OP>(
-//           stream, small, req, big, workspace, config);
-//       });
-//     });
-//   } else {
-//     ReduceImpl<Reducer, ndim, DType, DType, DType, OP>(stream, small, req, big, workspace, config);
-//   }
-  
-  
-
-  
-  //std::cout << "m is: " << config.M << std::endl;
-  //std::cout << "n is: " << config.N << std::endl;
-  
   if (config.M == 1) {
-    //std::cout << "boom boom uuuuuuu" << std::endl;
-    reduce_kernel_M1<Reducer, NDim, OType, DType, OType, mxnet::op::mshadow_op::myOp<DType, OType>>
+    reduce_kernel_M1<Reducer, NDim, OType, DType, OType, mxnet::op::mshadow_op::arg_min_max_map<DType, OType>>
     <<< config.kernel_1.gridDim, config.kernel_1.blockDim, 0, stream >>>(
       config.N, false, in_data.dptr<DType>(), reinterpret_cast<OType*>(out_data.dptr_), in_data.shape_.get<NDim>(),
       out_data.shape_.get<NDim>());
@@ -87,13 +57,7 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
   else {
     OType* out_dptr = reinterpret_cast<OType*>(out_data.dptr_);
     bool addto = false;
-
-    //std::cout << "boom boom uuuiiiiiii" << std::endl;
-
-
-    // TODO what is this doing?
     if (config.Mnext > 1) {
-      //std::cout << "boom boom u555" << std::endl;
       // small_dptr[] is N*Mnext*sizeof(DType) bytes
       out_dptr = reinterpret_cast<OType*>(workspace.dptr_);
       addto = false;
@@ -102,10 +66,6 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
       // Check that we have enough storage
       CHECK_GE(workspace.size(0), config.workspace_size);
     }
-
-
-
-
     const int by = (config.kernel_1.do_transpose) ?
       config.kernel_1.blockDim.x : config.kernel_1.blockDim.y;
     const bool do_unroll = ( config.M / (by*config.Mnext) >= unroll_reduce );
@@ -118,30 +78,13 @@ void NumpyArgMinMaxReduce(Stream<gpu> *s, const TBlob& in_data, const TBlob& out
         config.Mnext, config.kernel_1.do_transpose);
     });
     MSHADOW_CUDA_POST_KERNEL_CHECK(reduce_kernel);
-
     if (config.Mnext > 1) {
-
-      //std::cout << "boom boom u9999" << std::endl;
       reduce_lines_kernel<Reducer, OType>
       <<< config.kernel_2.gridSize, config.kernel_2.blockSize, 0, stream >>>
         (config.N, config.Mnext, false, config.N, out_dptr, reinterpret_cast<OType*>(out_data.dptr_));
       MSHADOW_CUDA_POST_KERNEL_CHECK(reduce_lines_kernel);
     }
   }
-  
-
-
-  
-
-
-
-
-
-
-
 }
-
-
-
 
 #endif // MXNET_OPERATOR_NUMPY_NP_BROADCAST_REDUCE_OP_CUH_
