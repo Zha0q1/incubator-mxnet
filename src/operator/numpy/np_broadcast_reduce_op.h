@@ -492,6 +492,15 @@ void NumpyArgMinMaxReduce(mshadow::Stream<cpu> *s, const TBlob& in_data, const T
     in_data.shape_.get<NDim>(), out_data.shape_.get<NDim>(), rshape, rstride);
 }
 
+// CPU reduce won't use any extra workspace as gpu reduce does
+template<xpu>
+void XPUWorkspaceSize(size_t& workspace_size) {}
+
+template<>
+void XPUWorkspaceSize<cpu>(size_t& workspace_size) {
+  workspace_size = 0;
+}
+
 #ifdef __CUDACC__
 #include "np_broadcast_reduce_op.cuh"
 #endif
@@ -552,6 +561,7 @@ void NumpyArgMinMaxCompute(const nnvm::NodeAttrs& attrs,
     BROADCAST_NDIM_SWITCH(dst_shape.ndim(), NDim, {
       size_t workspace_size = broadcast::ReduceWorkspaceSize(
         s, intermediate_out_data.shape_, req[0], in_data.shape_, sizeof(OType));
+      XPUWorkspaceSize<xpu>(workspace_size);
       Tensor<xpu, 1, char> workspace =
         ctx.requested[0].get_space_typed<xpu, 1, char>(Shape1(workspace_size), s);
       NumpyArgMinMaxReduce<mshadow_op::argmax, NDim, DType, OType>(s, in_data, intermediate_out_data, workspace);
