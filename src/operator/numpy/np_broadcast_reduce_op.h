@@ -509,15 +509,15 @@ void NumpyArgMinMaxCompute(const nnvm::NodeAttrs& attrs,
   TBlob out = outputs[0];
   TBlob in = inputs[0];
   MSHADOW_TYPE_SWITCH_WITH_BOOL(in.type_flag_, DType, {
-    // define type
+    // define OType
     typedef mxnet::op::mshadow_op::Num<int, DType> OType;
     // request a work space
     size_t workspace_size = sizeof(OType) * out.shape_.Size();
     Tensor<xpu, 1, char> workspace = 
               ctx.requested[0].get_space_typed<xpu, 1, char>(Shape1(workspace_size), s);
-    // set up dummy output
-    TBlob dummy = out;
-    dummy.dptr_ = (int64_t*)workspace.dptr_;
+    // set up intermediate output
+    TBlob intermediate = out;
+    intermediate.dptr_ = (int64_t*)workspace.dptr_;
     // get the outputshape
     dmlc::optional<mxnet::Tuple<int>> axes;
     if (param.axis.has_value()) {
@@ -526,24 +526,24 @@ void NumpyArgMinMaxCompute(const nnvm::NodeAttrs& attrs,
     }
     TShape small;
     small = NumpyReduceAxesShapeImpl(in.shape_, axes, true);
-    // reshape the input and dummy output tensor
+    // reshape the input and intermediate output tensor
     mxnet::TShape src_shape, dst_shape;
     BroadcastReduceShapeCompact(in.shape_, small, &src_shape, &dst_shape);
     const TBlob in_data = in.reshape(src_shape);
-    const TBlob out_data = dummy.reshape(dst_shape);
+    const TBlob intermediate_out_data = intermediate.reshape(dst_shape);
     // switch dim
     BROADCAST_NDIM_SWITCH(dst_shape.ndim(), NDim, {
       size_t workspace_size = broadcast::ReduceWorkspaceSize(
-        s, out_data.shape_, req[0], in_data.shape_, sizeof(OType));
+        s, intermediate_out_data.shape_, req[0], in_data.shape_, sizeof(OType));
       Tensor<xpu, 1, char> workspace =
         ctx.requested[0].get_space_typed<xpu, 1, char>(Shape1(workspace_size), s);
       NumpyArgMinMaxReduce<mshadow_op::argmax, NDim, DType, OType>(s, in_data, out_data, workspace);
     });
-    // parse the indices from the dummy tensor back to the actual output tensor
+    // parse the indices from the intermediate tensor back to the actual output tensor
     using namespace mxnet_op;
     Kernel<argmax_parse, xpu>::Launch(
         s, out.shape_.Size(), outputs[0].dptr<int64_t>(),
-        static_cast<OType*>(out_data.dptr_));
+        static_cast<OType*>(intermediate_out_data.dptr_));
   });
 }
 
