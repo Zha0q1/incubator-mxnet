@@ -878,6 +878,19 @@ def test_hstack():
     assert inp2.grad[-1, -1] == 1
 
 
+@use_np
+def test_swapaxes():
+    inp = np.zeros((2, 2, INT_OVERFLOW))
+    inp[1, 0, -1], inp[0, 1, -1] = 1, 2
+    inp.attach_grad()
+    with mx.autograd.record():
+        out = np.swapaxes(inp, 0, 2)
+        out.backward()
+    assert out.shape == (INT_OVERFLOW, 2, 2)
+    assert out[-1, 0, 1] == 1 and out[-1, 1, 0] == 2
+    assert inp.grad.shape == inp.shape
+    assert inp.grad[-1, -1, -1] == 1
+
 '''
                                      _               _
   _ _ _  _ _ __  _ __ _  _   _____ _| |_ ___ _ _  __(_)___ _ _
