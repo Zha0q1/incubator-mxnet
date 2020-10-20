@@ -1410,24 +1410,31 @@ def test_batch_flatten():
     assert A.grad.shape == (2, 1, INT_OVERFLOW)
     assert A.grad[0][0][0] == 1
 
-# broken
-@use_np
-@pytest.mark.skip(reason='Does not support large tensor; to be fixed')
-def test_batch_norm():
-    A = np.ones((2, INT_OVERFLOW))
-    gamma = np.ones((2))
-    beta = np.zeros((2))
-    mov_mean = np.ones((2))
-    mov_var = np.ones((2))
-    A.attach_grad() 
-    with mx.autograd.record():
-        B = npx.batch_norm(A, gamma, beta, mov_mean, mov_var)
-    assert B.shape == (2, INT_OVERFLOW)
-    assert B[0][0] == 0
-    B.backward()
-    assert A.grad.shape == (2, INT_OVERFLOW)
-    assert A.grad[0][0] == 0
 
+@use_np
+def test_batch_norm():
+    inp = np.zeros((2, INT_OVERFLOW))
+    gamma = np.array([1.5, 2.5])
+    beta = np.array([0.3, 0.6])
+    mov_mean = np.array([0.4, 0.8])
+    mov_var = np.array([0.6, 1.2])
+    eps = 1e-5
+    inp[0, -1], inp[1, -1] = 3, 6
+    inp.attach_grad()
+    with mx.autograd.record():
+        out = npx.batch_norm(inp, gamma=gamma, beta=beta, moving_mean=mov_mean,\
+            moving_var=mov_var, axis=0, eps=eps, use_global_stats=True)
+        out.backward()
+    assert out.shape == inp.shape
+    ref0 = (inp[0, -1] - mov_mean[0]) / (mov_var[0] + eps)**0.5 * gamma[0] + beta[0]
+    ref1 = (inp[1, -1] - mov_mean[1]) / (mov_var[1] + eps)**0.5 * gamma[1] + beta[1]
+    assert_almost_equal(out[0, -1], ref0, rtol=1e-3, atol=1e-5)
+    assert_almost_equal(out[1, -1], ref1, rtol=1e-3, atol=1e-5)
+    assert inp.grad.shape == inp.shape
+    grad_ref0 = gamma[0] / (mov_var[0] + eps)**0.5
+    grad_ref1 = gamma[1] / (mov_var[1] + eps)**0.5
+    assert_almost_equal(inp.grad[0, -1], grad_ref0, rtol=1e-3, atol=1e-5)
+    assert_almost_equal(inp.grad[1, -1], grad_ref1, rtol=1e-3, atol=1e-5)
 
 @use_np
 def test_nonzero():
