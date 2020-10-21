@@ -1651,6 +1651,28 @@ def test_batch_norm():
 
 
 @use_np
+def test_batch_norm_mean_var():
+    N = 2**20
+    inp = np.zeros((2, INT_OVERFLOW), dtype='float64')
+    gamma = np.array([1, 1], dtype='float64')
+    beta = np.array([0, 0], dtype='float64')
+    mov_mean = np.array([0, 0], dtype='float64')
+    mov_var = np.array([1, 1], dtype='float64')
+    eps = 0
+    inp[1, -1] = N
+    with mx.autograd.record():
+        out, mean, var = npx.batch_norm(inp, gamma=gamma, beta=beta, moving_mean=mov_mean,\
+            moving_var=mov_var, axis=0, eps=eps, output_mean_var=True)
+    assert out.shape == inp.shape
+    mean_ref = float(N) / INT_OVERFLOW
+    std_ref = ((INT_OVERFLOW-1) * (mean_ref-0)**2 + (mean_ref-N)**2) / INT_OVERFLOW
+    out_ref = (N - mean_ref) / (std_ref**0.5)
+    assert_almost_equal(mean[1], mean_ref, rtol=1e-3, atol=1e-5)
+    assert_almost_equal(var[1], 1 / std_ref**0.5, rtol=1e-3, atol=1e-5)
+    assert_almost_equal(out[1, -1], out_ref, rtol=1e-3, atol=1e-5)
+
+
+@use_np
 def test_nonzero():
     A = np.zeros((2, INT_OVERFLOW))
     A[0, 1] = 1
