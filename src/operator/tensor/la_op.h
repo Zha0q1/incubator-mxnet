@@ -413,6 +413,10 @@ inline bool InverseShape(const nnvm::NodeAttrs& attrs,
   CHECK_EQ(in_attrs->size(), 1);
   CHECK_EQ(out_attrs->size(), 1);
   const mxnet::TShape& in = (*in_attrs)[0];
+
+  CHECK_LT(in.Size(), INT32_MAX) << "ValueError: np.linalg.inv currently does not"
+    << " support large input tensors (containing >= 2^31 elements).";
+
   if (!ndim_is_known(in)) return false;
   const int ndim(in.ndim());
   CHECK_GE(ndim, 2) << "Input A's dimension must be >= 2";
@@ -429,6 +433,10 @@ inline bool DetShape(const nnvm::NodeAttrs& attrs,
   CHECK_EQ(in_attrs->size(), 1);
   CHECK_EQ(out_attrs->size(), onum + 2);
   const mxnet::TShape& in = (*in_attrs)[0];
+
+  CHECK_LT(in.Size(), INT32_MAX) << "ValueError: np.linalg.det, np.linalg.slogdet"
+    << " currently do not support large input tensors (containing >= 2^31 elements).";
+
   if (!ndim_is_known(in)) return false;
   const int ndim(in.ndim());
   CHECK_GE(ndim, 2) << "Input A's dimension must be >= 2";

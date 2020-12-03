@@ -55,6 +55,8 @@ MXNET_REGISTER_API("_npi.lstsq")
   int num_inputs = 2;
   int num_outputs = 0;
   NDArray* inputs[] = {args[0].operator mxnet::NDArray*(), args[1].operator mxnet::NDArray*()};
+  CHECK_LT(inputs[0]->shape().Size(), INT32_MAX) << "ValueError: np.linalg.lstsq currently does not"
+    << " support large input tensors (containing >= 2^31 elements).";
   auto ndoutputs = Invoke(op, &attrs, num_inputs, inputs, &num_outputs, nullptr);
   *ret = ADT(0, {NDArrayHandle(ndoutputs[0]),
                  NDArrayHandle(ndoutputs[1]),

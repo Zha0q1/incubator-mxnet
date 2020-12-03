@@ -38,6 +38,9 @@ bool EigOpShape(const nnvm::NodeAttrs& attrs,
   const mxnet::TShape& eig_shape = (*out_attrs)[0];
   const mxnet::TShape& eigv_shape = (*out_attrs)[1];
 
+  CHECK_LT(a_shape.Size(), INT32_MAX) << "ValueError: np.linalg.eig(h) currently does not"
+    << " support large input tensors (containing >= 2^31 elements).";
+
   if (shape_is_known(a_shape)) {
     // Forward shape inference.
     const int a_ndim = a_shape.ndim();

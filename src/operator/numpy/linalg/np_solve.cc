@@ -40,6 +40,10 @@ inline bool SolveOpShape(const nnvm::NodeAttrs &attrs,
   CHECK_EQ(out_attrs->size(), 1U);
   const mxnet::TShape& in_a_shape = (*in_attrs)[0];
   const mxnet::TShape& in_b_shape = (*in_attrs)[1];
+
+  CHECK_LT(in_a_shape.Size(), INT32_MAX) << "ValueError: np.linalg.solve currently does not"
+    << " support large input tensors (containing >= 2^31 elements).";
+
   if (!ndim_is_known(in_a_shape)) { return false; }
   int in_a_ndim = in_a_shape.ndim(), in_b_ndim = in_b_shape.ndim();
 

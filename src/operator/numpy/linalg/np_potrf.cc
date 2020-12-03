@@ -39,6 +39,8 @@ inline bool NumpyLaCholeskyShape(const nnvm::NodeAttrs& attrs,
   const mxnet::TShape& in_shape = (*in_attrs)[0];
   CHECK_GE(in_shape.ndim(), 2)
     << "Array must be at least two-dimensional";
+  CHECK_LT(in_shape.Size(), INT32_MAX) << "ValueError: np.linalg.cholesky currently does not"
+    << " support large input tensors (containing >= 2^31 elements).";
   return ElemwiseShape<1, 1>(attrs, in_attrs, out_attrs);
 }
 

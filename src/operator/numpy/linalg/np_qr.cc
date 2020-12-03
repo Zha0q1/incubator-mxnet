@@ -42,6 +42,9 @@ inline bool NumpyLaQrShape(const nnvm::NodeAttrs& attrs,
   CHECK_EQ(out_attrs->size(), 2U);
   const mxnet::TShape& in_a = (*in_attrs)[0];
 
+  CHECK_LT(in_a.Size(), INT32_MAX) << "ValueError: np.linalg.qr currently does not"
+    << " support large input tensors (containing >= 2^31 elements).";
+
   if (in_a.ndim() >= 2) {
     // Forward shape inference.
     const int ndim(in_a.ndim());

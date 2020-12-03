@@ -38,6 +38,11 @@ bool TensorsolveOpShape(const nnvm::NodeAttrs& attrs,
   const int a_ndim = a_shape.ndim();
   const int b_ndim = b_shape.ndim();
 
+  CHECK_LT(a_shape.Size(), INT32_MAX) << "ValueError: np.linalg.tensorsolve currently does not"
+    << " support large input tensors (containing >= 2^31 elements).";
+  CHECK_LT(b_shape.Size(), INT32_MAX) << "ValueError: np.linalg.tensorsolve currently does not"
+    << " support large input tensors (containing >= 2^31 elements).";
+
   if (!ndim_is_known(a_shape) || !ndim_is_known(b_shape)) {
     return false;
   }

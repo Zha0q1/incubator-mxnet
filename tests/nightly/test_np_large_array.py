@@ -2329,3 +2329,76 @@ def test_insert():
     assert out2[1] == 5 and out2[2] == 6
     assertRaises(MXNetError, np.insert, arr=inp3, obj=np.array([2, 2], dtype=np.int64), values=np.array([5, 6]))
 
+
+@use_np
+def test_linalg_large_tensor_checks():
+    N = 2**16
+    mat = np.zeros((N, N))
+    vec = np.zeros((N))
+
+    def test_matrix_rank():
+        assertRaises(ValueError, np.linalg.matrix_rank, mat, tol=np.array([1]))
+        assertRaises(ValueError, np.linalg.matrix_rank, mat)
+
+    def test_lstsq():
+        assertRaises(ValueError, np.linalg.lstsq, mat, vec)
+
+    def test_pinv():
+        assertRaises(ValueError, np.linalg.pinv, mat, vec)
+        assertRaises(ValueError, np.linalg.pinv, mat)
+
+    def test_svd():
+        assertRaises(ValueError, np.linalg.svd, mat)
+
+    def test_cholesky():
+        assertRaises(ValueError, np.linalg.cholesky, mat)
+
+    def test_qr():
+        assertRaises(ValueError, np.linalg.qr, mat)
+
+    def test_inv():
+        assertRaises(ValueError, np.linalg.inv, mat)
+
+    def test_det():
+        assertRaises(ValueError, np.linalg.det, mat)
+
+    def test_slogdet():
+        assertRaises(ValueError, np.linalg.slogdet, mat)
+
+    def test_solve():
+        assertRaises(ValueError, np.linalg.solve, mat, vec)
+
+    def test_eigvals():
+        assertRaises(ValueError, np.linalg.eigvals, mat)
+
+    def test_eigvalsh():
+        assertRaises(ValueError, np.linalg.eigvalsh, mat)
+
+    def test_eig():
+        assertRaises(ValueError, np.linalg.eig, mat)
+
+    def test_eigh():
+        assertRaises(ValueError, np.linalg.eigh, mat)
+
+    def test_tensorinv():
+        assertRaises(ValueError, np.linalg.tensorinv, mat)
+
+    def test_tensorsolve():
+        assertRaises(ValueError, np.linalg.tensorsolve, mat, vec)
+
+    test_matrix_rank()
+    test_lstsq()
+    test_pinv()
+    test_svd()
+    test_cholesky()
+    test_qr()
+    test_inv()
+    test_det()
+    test_slogdet()
+    test_solve()
+    test_eigvals()
+    test_eigvalsh()
+    test_eig()
+    test_eigh()
+    test_tensorinv()
+    test_tensorsolve()

@@ -45,6 +45,10 @@ inline bool NumpyLaGesvdShape(const nnvm::NodeAttrs& attrs,
   const mxnet::TShape& out_ut = (*out_attrs)[0];
   const mxnet::TShape& out_l = (*out_attrs)[1];
   const mxnet::TShape& out_v = (*out_attrs)[2];
+  
+  CHECK_LT(in_a.Size(), INT32_MAX) << "ValueError: np.linalg.svd currently does not"
+    << " support large input tensors (containing >= 2^31 elements).";
+  
   if (in_a.ndim() >= 2) {
     // Forward shape inference.
     const int ndim(in_a.ndim());

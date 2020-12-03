@@ -35,6 +35,9 @@ inline bool MatrixRankNoneTolShape(const nnvm::NodeAttrs& attrs,
   const mxnet::TShape& a_shape = (*in_attrs)[0];
   const int a_ndim = a_shape.ndim();
 
+  CHECK_LT(a_shape.Size(), INT32_MAX) << "ValueError: np.linalg.matrix_rank currently does not"
+    << " support large input tensors (containing >= 2^31 elements).";
+
   if (shape_is_known(a_shape)) {
     CHECK_GT(a_shape.Size(), 0U)
       << "Not support zero-size input array which has no identity";
@@ -93,6 +96,9 @@ inline bool MatrixRankShape(const nnvm::NodeAttrs& attrs,
   const mxnet::TShape& tol_shape = (*in_attrs)[1];
   const int a_ndim = a_shape.ndim();
   const int tol_ndim = tol_shape.ndim();
+
+  CHECK_LT(a_shape.Size(), INT32_MAX) << "ValueError: np.linalg.matrix_rank currently does not"
+    << " support large input tensors (containing >= 2^31 elements).";
 
   if (shape_is_known(a_shape) && shape_is_known(tol_shape)) {
     CHECK_GT(a_shape.Size(), 0U)
