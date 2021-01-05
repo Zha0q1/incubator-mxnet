@@ -904,13 +904,15 @@ def convert_softmax(node, **kwargs):
             create_tensor([], name+"_void", kwargs["initializer"]),
             create_tensor([0], name+"_0", kwargs["initializer"]),
             create_tensor([1], name+"_1", kwargs["initializer"]),
+            create_tensor([0], name+"_0_itype", kwargs["initializer"], dtype='float32'),
+            create_tensor([1], name+"_1_itype", kwargs["initializer"], dtype='float32'),
             create_const_scalar_node(name+'_-1_s', np.int64(-1), kwargs),
             create_const_scalar_node(name+'_0_s', np.int64(0), kwargs),
             create_const_scalar_node(name+'_1_s', np.int64(1), kwargs),
             # cast data type
             make_node("Cast", [length], [name+"_length"], to=int(TensorProto.INT64)),
-            make_node("Cast", [name+"_0"], [name+"_0_itype"], to=input_type),
-            make_node("Cast", [name+"_1"], [name+"_1_itype"], to=input_type),
+            #make_node("Cast", [name+"_0"], [name+"_0_itype"], to=input_type),
+            #make_node("Cast", [name+"_1"], [name+"_1_itype"], to=input_type),
             # softmax output
             make_node("Div", [name+"_exp_out", name+"_rsum_out"], [name+"_div1_out"]),
             # update axis
@@ -927,7 +929,7 @@ def convert_softmax(node, **kwargs):
             # one hot for axis
             make_node("Reshape", [name+"_in_dim", name+"_void"], [name+"_in_dim_s"]),
             make_node("Range", [name+"_0_s", name+"_in_dim_s", name+"_1_s"], [name+"_range1_out"]),
-            make_node("Equal", [name+"_range1_out", name+"_final_axis"], [name+"_equal_out"]),
+            make_node("Equal", [name+"_range1_out", name+"_final_axis"], [name+"_equal_out"], name=name+'_eq3'),
             make_node("Cast", [name+"_equal_out"], [name+"_one_hot"], to=int(TensorProto.INT64)),
             # reshape data mask for less
             make_node("Sub", [name+"_axis_dim_s", name+"_1_s"], [name+"_sub0_out"]),
@@ -946,7 +948,7 @@ def convert_softmax(node, **kwargs):
             make_node("Cast", [name+"_less_out"], [name+"_mask"], to=input_type),
             make_node("Mul", [name+"_div1_out", name+"_mask"], [name+"_mul3_out"]),
             make_node("ReduceSum", [name+"_mul3_out"], [name+"_rsum1_out"], axes=[axis], keepdims=1),
-            make_node("Equal", [name+"_rsum1_out", name+"_0_itype"], [name+"_equal1_out"]),
+            make_node("Equal", [name+"_rsum1_out", name+"_0_itype"], [name+"_equal1_out"], name=name+'_eq4'),
             make_node("Where", [name+"_equal1_out", name+"_1_itype", name+"_rsum1_out"], [name+"_where_out"]),
             make_node("Div", [name+"_mul3_out", name+"_where_out"], [name], name=name)
         ]
@@ -1646,6 +1648,7 @@ def convert_reshape(node, **kwargs):
             make_node('Reshape', [input_nodes[0], name+'_targ_shape'], [name], name=name)
             ]
     else:
+        pad_value_1 = onnx.helper.make_tensor('pad_value_1', onnx.TensorProto.INT64, [1], [1])
         nodes += [
             create_tensor([0], name+'_0', kwargs['initializer']),
             create_tensor([1], name+'_1', kwargs['initializer']),
@@ -1660,14 +1663,22 @@ def convert_reshape(node, **kwargs):
                       [name+'_targ_pad_len']),
             make_node('Where', [name+'_orig_less_targ', name+'_pad_len', name+'_0'],
                       [name+'_orig_pad_len']),
-            make_node('Concat', [name+'_targ_pad_len', name+'_0'], [name+'_targ_pads'], axis=0),
-            make_node('Concat', [name+'_orig_pad_len', name+'_0'], [name+'_orig_pads'], axis=0),
-            make_node('Pad', [name+'_targ_shape', name+'_targ_pads', name+'_1'],
-                      [name+'_targ_shape_padded'], mode='constant'),
-            make_node('Pad', [name+'_orig_shape', name+'_orig_pads', name+'_1'],
-                      [name+'_orig_shape_padded'], mode='constant'),
+            #make_node('Concat', [name+'_targ_pad_len', name+'_0'], [name+'_targ_pads'], axis=0),
+            #make_node('Concat', [name+'_orig_pad_len', name+'_0'], [name+'_orig_pads'], axis=0),
+            #make_node('Pad', [name+'_targ_shape', name+'_targ_pads', name+'_1'],
+            #          [name+'_targ_shape_padded'], mode='constant'),
+            #make_node('Pad', [name+'_orig_shape', name+'_orig_pads', name+'_1'],
+            #          [name+'_orig_shape_padded'], mode='constant'),
+            make_node('ConstantOfShape', [name+'_targ_pad_len'], [name+'_targ_pad'],
+                      value=pad_value_1, name=name+'_0'),
+            make_node('ConstantOfShape', [name+'_orig_pad_len'], [name+'_orig_pad'],
+                      value=pad_value_1, name=name+'_1'),
+            make_node('Concat', [name+'_targ_pad', name+'_targ_shape'],
+                      [name+'_targ_shape_padded'], axis=0, name=name+'_2'),
+            make_node('Concat', [name+'_orig_pad', name+'_orig_shape'],
+                      [name+'_orig_shape_padded'], axis=0, name=name+'_3'),
             make_node('Equal', [name+'_targ_shape_padded', name+'_0'],
-                      [name+'_targ_shape_0_mask']),
+                      [name+'_targ_shape_0_mask'], name=name+'_eq5'),
             make_node('Where', [name+'_targ_shape_0_mask', name+'_orig_shape_padded',
                                 name+'_targ_shape_padded'], [name+'_targ_shape_new']),
             make_node('Shape', [name+'_targ_shape_new'], [name+'_targ_new_dim']),
@@ -2350,7 +2361,7 @@ def convert_layer_norm(node, **kwargs):
         create_tensor([], name+"_void", kwargs["initializer"]),
         create_const_scalar_node(name+'_0_s', np.int64(0), kwargs),
         create_const_scalar_node(name+'_1_s', np.int64(1), kwargs),
-        create_const_scalar_node(name+"_2_s", np.int64(2), kwargs),
+        create_const_scalar_node(name+"_2_s", np.float32(2), kwargs),
         create_const_scalar_node(name+"_eps", np.float32(eps), kwargs),
         make_node("ReduceMean", [input_nodes[0]], [name+"_rm0_out"], axes=[axes]),
         make_node("Sub", [input_nodes[0], name+"_rm0_out"], [name+"_sub0_out"]),
@@ -2372,7 +2383,7 @@ def convert_layer_norm(node, **kwargs):
             make_node("Shape", [name+"_shape0_out"], [name+"_in_dim"]),
             make_node("Reshape", [name+"_in_dim", name+"_void"], [name+"_in_dim_s"]),
             make_node("Range", [name+"_0_s", name+"_in_dim_s", name+"_1_s"], [name+"_range"]),
-            make_node("Equal", [name+"_range", name+"_axes"], [name+"_equal"]),
+            make_node("Equal", [name+"_range", name+"_axes"], [name+"_equal"], name=name+'_eq1'),
             make_node("Cast", [name+"_equal"], [name+"_one_hot"], to=int(TensorProto.INT64)),
             make_node("Slice", [name+"_shape0_out", name+"_axes", name+"_axes+1"], [name+"_slice_out"]),
             make_node("Reshape", [name+"_slice_out", name+"_void"], [name+"_slice_out_s"]),
@@ -2532,7 +2543,7 @@ def convert_broadcast_axis(node, **kwargs):
             nodes += [create_tensor([axis], name+'_'+str(axis), kwargs["initializer"])]
         nodes += [
             create_tensor([size[i]-1], name+'_size_'+str(i), kwargs["initializer"]),
-            make_node('Equal', [name+'_range', name+'_'+str(axis)], [name+'_equal_'+str(i)]),
+            make_node('Equal', [name+'_range', name+'_'+str(axis)], [name+'_equal_'+str(i)], name=name+'_eq2'),
             make_node('Cast', [name+'_equal_'+str(i)], [name+'_cast_'+str(i)], to=int(TensorProto.INT64)),
             make_node('Mul', [name+'_size_'+str(i), name+'_cast_'+str(i)], [name+'_mul_'+str(i)]),
             make_node('Add', [name+'_mul_'+str(i), name+'_1'], [name+'_add_'+str(i)]),
@@ -2562,10 +2573,10 @@ def convert_sequencemask(node, **kwargs):
         return [make_node('Identity', [input_nodes[0]], [name], name=name)]
 
     nodes = [
-        create_tensor([], name+'_void', kwargs["initializer"]),
-        create_tensor([0], name+'_0', kwargs["initializer"]),
-        create_tensor([1], name+'_1', kwargs["initializer"]),
-        create_tensor([2], name+'_2', kwargs["initializer"]),
+        create_tensor([], name+'_void', kwargs["initializer"], dtype='int64'),
+        create_tensor([0], name+'_0', kwargs["initializer"], dtype='int64'),
+        create_tensor([1], name+'_1', kwargs["initializer"], dtype='int64'),
+        create_tensor([2], name+'_2', kwargs["initializer"], dtype='int64'),
         create_const_scalar_node(name+'_0_s', np.int64(0), kwargs),
         create_const_scalar_node(name+'_1_s', np.int64(1), kwargs),
         create_const_scalar_node(name+'_2_s', np.int64(2), kwargs),
@@ -2587,7 +2598,8 @@ def convert_sequencemask(node, **kwargs):
             make_node('Range', [name+'_0_s', name+'_max_len', name+'_1_s'], [name+'_range_1']),
             make_node('Reshape', [name+'_range_1', name+'_shape_0'], [name+"_reshape_0"]),
             make_node('Cast', [input_nodes[1]], [name+'_cast'], to=int(TensorProto.INT64)),
-            make_node('Less', [name+'_reshape_0', name+'_cast'], [name+'_less_1']),
+            make_node('Unsqueeze', [name+'_cast'], [name+'_unsqueeze'], axes=[0]),
+            make_node('Less', [name+'_reshape_0', name+'_unsqueeze'], [name+'_less_1']),
             make_node('Reshape', [name+'_less_1', name+'_shape_1'], [name+"_reshape_1"]),
             make_node('Where', [name+'_reshape_1', input_nodes[0], name+'_mask_val'], [name], name=name),
         ]
@@ -2708,6 +2720,7 @@ def convert_arange_like(node, **kwargs):
     """Map MXNet's arange_like operator attributes to onnx's Range and Reshape operators.
     """
     from onnx.helper import make_node
+    from onnx import TensorProto
     name, input_nodes, attrs = get_inputs(node, kwargs)
 
     opset_version = kwargs['opset_version']
@@ -2724,9 +2737,9 @@ def convert_arange_like(node, **kwargs):
         raise NotImplementedError("arange_like operator with repeat != 1 not yet implemented.")
 
     nodes = [
-        create_const_scalar_node(name+"_start", np.array([start], dtype=dtype), kwargs),
-        create_const_scalar_node(name+"_step", np.array([step], dtype=dtype), kwargs),
-        create_const_scalar_node(name+"_half_step", np.array([float(step)*0.5], dtype=dtype), kwargs),
+        create_const_scalar_node(name+"_start", np.array([start], dtype='int64'), kwargs),
+        create_const_scalar_node(name+"_step", np.array([step], dtype='int64'), kwargs),
+        create_const_scalar_node(name+"_half_step", np.array([float(step)*0.5], dtype='int64'), kwargs),
         create_tensor([], name+'_void', kwargs["initializer"])
     ]
     if axis == 'None':
@@ -2735,11 +2748,12 @@ def convert_arange_like(node, **kwargs):
             make_node('Shape', [input_nodes[0]], [name+"_shape0_out"]),
             make_node("ReduceProd", [name+"_shape0_out"], [name+"_redprod0_out"]),
             make_node('Reshape', [name+'_redprod0_out', name+'_void'], [name+'_reshape0_out']),
-            make_node("Cast", [name+"_reshape0_out"], [name+"_cast0_out"], to=input_type),
+            make_node("Cast", [name+"_reshape0_out"], [name+"_cast0_out"], to=int(TensorProto.INT64)),
             make_node("Mul", [name+"_cast0_out", name+"_step"], [name+"_mul0_out"]),
             make_node("Add", [name+"_mul0_out", name+"_start"], [name+"_add1_out"]),
             make_node("Sub", [name+"_add1_out", name+"_half_step"], [name+"_sub0_out"]),
-            make_node("Range", [name+"_start", name+"_sub0_out", name+"_step"], [name+"_range0_out"]),
+            make_node("Cast", [name+"_sub0_out"], [name+"_sub0_out_cast"], to=int(TensorProto.INT64)),
+            make_node("Range", [name+"_start", name+"_sub0_out_cast", name+"_step"], [name+"_range0_out"]),
             make_node("Reshape", [name+"_range0_out", name+"_shape0_out"], [name], name=name)
         ]
     else:
@@ -2751,11 +2765,12 @@ def convert_arange_like(node, **kwargs):
             make_node('Slice', [name+"_shape0_out", name+"_axis_start", name+"_axis_end"], [name+"_slice0_out"]),
             make_node("ReduceProd", [name+"_slice0_out"], [name+"_reprod0_out"]),
             make_node('Reshape', [name+'_reprod0_out', name+'_void'], [name+'_reshape0_out']),
-            make_node("Cast", [name+"_reshape0_out"], [name+"_cast0_out"], to=input_type),
+            make_node("Cast", [name+"_reshape0_out"], [name+"_cast0_out"], to=int(TensorProto.INT64)),
             make_node("Mul", [name+"_cast0_out", name+"_step"], [name+"_mul0_out"]),
             make_node("Add", [name+"_mul0_out", name+"_start"], [name+"_add1_out"]),
             make_node("Sub", [name+"_add1_out", name+"_half_step"], [name+"_sub0_out"]),
-            make_node("Range", [name+"_start", name+"_sub0_out", name+"_step"], [name], name=name)
+            make_node("Cast", [name+"_sub0_out"], [name+"_sub0_out_cast"], to=int(TensorProto.INT64)),
+            make_node("Range", [name+"_start", name+"_sub0_out_cast", name+"_step"], [name], name=name)
         ]
 
     return nodes
