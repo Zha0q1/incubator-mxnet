@@ -884,15 +884,15 @@ def convert_softmax(node, **kwargs):
             create_tensor([], name+"_void", kwargs["initializer"]),
             create_tensor([0], name+"_0", kwargs["initializer"]),
             create_tensor([1], name+"_1", kwargs["initializer"]),
-            create_tensor([0], name+"_0_itype", kwargs["initializer"], dtype='float32'),
-            create_tensor([1], name+"_1_itype", kwargs["initializer"], dtype='float32'),
+            #create_tensor([0], name+"_0_itype", kwargs["initializer"], dtype='float32'),
+            #create_tensor([1], name+"_1_itype", kwargs["initializer"], dtype='float32'),
             create_const_scalar_node(name+'_-1_s', np.int64(-1), kwargs),
             create_const_scalar_node(name+'_0_s', np.int64(0), kwargs),
             create_const_scalar_node(name+'_1_s', np.int64(1), kwargs),
             # cast data type
             make_node("Cast", [length], [name+"_length"], to=int(TensorProto.INT64)),
-            #make_node("Cast", [name+"_0"], [name+"_0_itype"], to=input_type),
-            #make_node("Cast", [name+"_1"], [name+"_1_itype"], to=input_type),
+            make_node("Cast", [name+"_0"], [name+"_0_itype"], to=input_type),
+            make_node("Cast", [name+"_1"], [name+"_1_itype"], to=input_type),
             # softmax output
             make_node("Div", [name+"_exp_out", name+"_rsum_out"], [name+"_div1_out"]),
             # update axis
@@ -909,7 +909,7 @@ def convert_softmax(node, **kwargs):
             # one hot for axis
             make_node("Reshape", [name+"_in_dim", name+"_void"], [name+"_in_dim_s"]),
             make_node("Range", [name+"_0_s", name+"_in_dim_s", name+"_1_s"], [name+"_range1_out"]),
-            make_node("Equal", [name+"_range1_out", name+"_final_axis"], [name+"_equal_out"], name=name+'_eq3'),
+            make_node("Equal", [name+"_range1_out", name+"_final_axis"], [name+"_equal_out"]),
             make_node("Cast", [name+"_equal_out"], [name+"_one_hot"], to=int(TensorProto.INT64)),
             # reshape data mask for less
             make_node("Sub", [name+"_axis_dim_s", name+"_1_s"], [name+"_sub0_out"]),
@@ -928,7 +928,7 @@ def convert_softmax(node, **kwargs):
             make_node("Cast", [name+"_less_out"], [name+"_mask"], to=input_type),
             make_node("Mul", [name+"_div1_out", name+"_mask"], [name+"_mul3_out"]),
             make_node("ReduceSum", [name+"_mul3_out"], [name+"_rsum1_out"], axes=[axis], keepdims=1),
-            make_node("Equal", [name+"_rsum1_out", name+"_0_itype"], [name+"_equal1_out"], name=name+'_eq4'),
+            make_node("Equal", [name+"_rsum1_out", name+"_0_itype"], [name+"_equal1_out"]),
             make_node("Where", [name+"_equal1_out", name+"_1_itype", name+"_rsum1_out"], [name+"_where_out"]),
             make_node("Div", [name+"_mul3_out", name+"_where_out"], [name], name=name)
         ]
@@ -2465,7 +2465,7 @@ def convert_broadcast_axis(node, **kwargs):
             nodes += [create_tensor([axis], name+'_'+str(axis), kwargs["initializer"])]
         nodes += [
             create_tensor([size[i]-1], name+'_size_'+str(i), kwargs["initializer"]),
-            make_node('Equal', [name+'_range', name+'_'+str(axis)], [name+'_equal_'+str(i)], name=name+'_eq2'),
+            make_node('Equal', [name+'_range', name+'_'+str(axis)], [name+'_equal_'+str(i)]),
             make_node('Cast', [name+'_equal_'+str(i)], [name+'_cast_'+str(i)], to=int(TensorProto.INT64)),
             make_node('Mul', [name+'_size_'+str(i), name+'_cast_'+str(i)], [name+'_mul_'+str(i)]),
             make_node('Add', [name+'_mul_'+str(i), name+'_1'], [name+'_add_'+str(i)]),
