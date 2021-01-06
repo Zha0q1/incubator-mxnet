@@ -2673,11 +2673,13 @@ def convert_arange_like(node, **kwargs):
     repeat = int(attrs.get('repeat', 1))
     if repeat != 1:
         raise NotImplementedError("arange_like operator with repeat != 1 not yet implemented.")
-
+    
+    #print(np.array([start], dtype='int64'))
+    #print(np.array([step], dtype='int64'))
     nodes = [
-        create_const_scalar_node(name+"_start", np.array([start], dtype='int64'), kwargs),
-        create_const_scalar_node(name+"_step", np.array([step], dtype='int64'), kwargs),
-        create_const_scalar_node(name+"_half_step", np.array([float(step)*0.5], dtype='int64'), kwargs),
+        create_const_scalar_node(name+"_start", np.array([start], dtype=dtype), kwargs),
+        create_const_scalar_node(name+"_step", np.array([step], dtype=dtype), kwargs),
+        create_const_scalar_node(name+"_half_step", np.array([float(step)*0.5], dtype=dtype), kwargs),
         create_tensor([], name+'_void', kwargs["initializer"])
     ]
     if axis == 'None':
@@ -2686,12 +2688,11 @@ def convert_arange_like(node, **kwargs):
             make_node('Shape', [input_nodes[0]], [name+"_shape0_out"]),
             make_node("ReduceProd", [name+"_shape0_out"], [name+"_redprod0_out"]),
             make_node('Reshape', [name+'_redprod0_out', name+'_void'], [name+'_reshape0_out']),
-            make_node("Cast", [name+"_reshape0_out"], [name+"_cast0_out"], to=int(TensorProto.INT64)),
+            make_node("Cast", [name+"_reshape0_out"], [name+"_cast0_out"], to=input_type),
             make_node("Mul", [name+"_cast0_out", name+"_step"], [name+"_mul0_out"]),
             make_node("Add", [name+"_mul0_out", name+"_start"], [name+"_add1_out"]),
             make_node("Sub", [name+"_add1_out", name+"_half_step"], [name+"_sub0_out"]),
-            make_node("Cast", [name+"_sub0_out"], [name+"_sub0_out_cast"], to=int(TensorProto.INT64)),
-            make_node("Range", [name+"_start", name+"_sub0_out_cast", name+"_step"], [name+"_range0_out"]),
+            make_node("Range", [name+"_start", name+"_sub0_out", name+"_step"], [name+"_range0_out"]),
             make_node("Reshape", [name+"_range0_out", name+"_shape0_out"], [name], name=name)
         ]
     else:
@@ -2703,12 +2704,11 @@ def convert_arange_like(node, **kwargs):
             make_node('Slice', [name+"_shape0_out", name+"_axis_start", name+"_axis_end"], [name+"_slice0_out"]),
             make_node("ReduceProd", [name+"_slice0_out"], [name+"_reprod0_out"]),
             make_node('Reshape', [name+'_reprod0_out', name+'_void'], [name+'_reshape0_out']),
-            make_node("Cast", [name+"_reshape0_out"], [name+"_cast0_out"], to=int(TensorProto.INT64)),
+            make_node("Cast", [name+"_reshape0_out"], [name+"_cast0_out"], to=input_type),
             make_node("Mul", [name+"_cast0_out", name+"_step"], [name+"_mul0_out"]),
             make_node("Add", [name+"_mul0_out", name+"_start"], [name+"_add1_out"]),
             make_node("Sub", [name+"_add1_out", name+"_half_step"], [name+"_sub0_out"]),
-            make_node("Cast", [name+"_sub0_out"], [name+"_sub0_out_cast"], to=int(TensorProto.INT64)),
-            make_node("Range", [name+"_start", name+"_sub0_out_cast", name+"_step"], [name], name=name)
+            make_node("Range", [name+"_start", name+"_sub0_out", name+"_step"], [name], name=name)
         ]
 
     return nodes
