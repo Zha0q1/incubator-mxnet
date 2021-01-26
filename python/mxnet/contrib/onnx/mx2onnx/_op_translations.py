@@ -131,15 +131,14 @@ def get_boolean_attribute_value(attrs, attr_name):
 def get_inputs(node, kwargs):
     """Helper function to get inputs"""
     name = node["name"]
-    proc_nodes = kwargs["proc_nodes"]
-    index_lookup = kwargs["index_lookup"]
+    outputs_lookup = kwargs["outputs_lookup"]
     inputs = node["inputs"]
     attrs = node.get("attrs", {})
 
     input_nodes = []
     for ip in inputs:
-        input_node_id = index_lookup[ip[0]]
-        input_nodes.append(proc_nodes[input_node_id].name)
+        input_node_name = outputs_lookup[ip[0]][ip[1]]
+        input_nodes.append(input_node_name)
 
     return name, input_nodes, attrs
 
@@ -179,21 +178,21 @@ def create_const_node(input_name, value, kwargs):
     initializer.append(tensor_node)
     return value_node
 
-def create_tensor(shape_list, shape_name, initializer, dtype='int64'):
+def create_tensor(tensor_list, tensor_name, initializer, dtype='int64'):
     """Helper function to create a tensor value node and a
     initializer tensor node with constant value."""
-    shape_np = np.array(shape_list, dtype=dtype)
-    data_type = onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[shape_np.dtype]
-    dims = np.shape(shape_np)
-    tensor_node = onnx.helper.make_tensor_value_info(shape_name, data_type, dims)
+    tensor_np = np.array(tensor_list, dtype=dtype)
+    data_type = onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[tensor_np.dtype]
+    dims = np.shape(tensor_np)
+    tensor_node = onnx.helper.make_tensor_value_info(tensor_name, data_type, dims)
     if dtype == np.float16:
-        shape_list = shape_np.view(dtype=np.uint16).flatten().tolist()
+        tensor_list = tensor_np.view(dtype=np.uint16).flatten().tolist()
     initializer.append(
         onnx.helper.make_tensor(
-            name=shape_name,
+            name=tensor_name,
             data_type=data_type,
             dims=dims,
-            vals=shape_list,
+            vals=tensor_list,
             raw=False
         )
     )
@@ -952,12 +951,11 @@ def convert_softmax_output(node, **kwargs):
     """
     name = node["name"]
 
-    input1_idx = kwargs["index_lookup"][node["inputs"][0][0]]
-    input1 = kwargs["proc_nodes"][input1_idx]
+    input1 = kwargs["outputs_lookup"][node["inputs"][0][0]][node["inputs"][0][1]]
 
     softmax_node = onnx.helper.make_node(
         "Softmax",
-        [input1.name],
+        [input1],
         [name],
         axis=1,
         name=name
@@ -971,11 +969,11 @@ def convert_logistic_regression_output(node, **kwargs):
     and return the created node.
     """
     name = node["name"]
-    input1_idx = kwargs["index_lookup"][node["inputs"][0][0]]
-    input1 = kwargs["proc_nodes"][input1_idx]
+    input1 = kwargs["outputs_lookup"][node["inputs"][0][0]][node["inputs"][0][1]]
+
     sigmoid_node = onnx.helper.make_node(
         "Sigmoid",
-        [input1.name],
+        [input1],
         [name],
         name=name
     )
@@ -2216,7 +2214,7 @@ def convert_broadcast_to(node, **kwargs):
     return [tensor_node, expand_node]
 
 
-@mx_op.register("topk")
+@mx_op.register('topk')
 def convert_topk(node, **kwargs):
     """Map MXNet's topk operator attributes to onnx's TopK operator
     and return the created node.
@@ -2224,25 +2222,56 @@ def convert_topk(node, **kwargs):
     from onnx.helper import make_node
     name, input_nodes, attrs = get_inputs(node, kwargs)
 
+    opset_version = kwargs['opset_version']
+    if opset_version < 11:
+        raise AttributeError('ONNX opset 11 or greater is required to export this operator')
+
     axis = int(attrs.get('axis', '-1'))
     k = int(attrs.get('k', '1'))
-    ret_type = attrs.get('ret_typ')
-    outputs = [name]
+    ret_type = attrs.get('ret_typ', 'indices')
+    is_ascend = int(attrs.get('is_ascend', '0'))
+    dtype = attrs.get('dtype', 'float32')
 
-    if ret_type and ret_type == 'both':
-        outputs.append(name + '_output1')
-    else:
-        raise NotImplementedError("ONNX expects both value and indices as output")
+    if ret_type == 'mask':
+        raise NotImplementedError('topk does not currently support ret_type==\'mask\'')
 
-    opset_version = kwargs['opset_version']
-    if opset_version >= 10:
-        nodes = [
-            create_const_scalar_node(name+"_k", np.int64(k), kwargs),
-            make_node("TopK", [input_nodes[0], name+"_k"], outputs, axis=axis, name=name)
+    nodes = [
+        create_tensor([k], name+'_k', kwargs['initializer']),
         ]
-        return nodes
+
+    if ret_type == 'both':
+        if dtype == 'int64':
+            nodes += [
+                make_node('TopK', [input_nodes[0], name+'_k'], [name+'0', name+'1'], axis=axis,
+                          largest=(0 if is_ascend else 1), sorted=1),
+                ]
+        else:
+            nodes += [
+                make_node('TopK', [input_nodes[0], name+'_k'], [name+'0', name+'_1_i'], axis=axis,
+                          largest=(0 if is_ascend else 1), sorted=1),
+                make_node('Cast', [name+'_1_i'], [name+'1'],
+                          to=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[np.dtype(dtype)])
+                ]
+    elif ret_type == 'value':
+        nodes += [
+            make_node('TopK', [input_nodes[0], name+'_k'], [name+'0', name+'_'], axis=axis,
+                      largest=(0 if is_ascend else 1), sorted=1),
+            ]
     else:
-        return [make_node("TopK", input_nodes, outputs, axis=axis, k=k, name=name)]
+        if dtype == 'int64':
+            nodes += [
+                make_node('TopK', [input_nodes[0], name+'_k'], [name+'_', name], axis=axis,
+                          largest=(0 if is_ascend else 1), sorted=1),
+                ]
+        else:
+            nodes += [
+                make_node('TopK', [input_nodes[0], name+'_k'], [name+'__', name+'_tmp'], axis=axis,
+                          largest=(0 if is_ascend else 1), sorted=1),
+                make_node('Cast', [name+'_tmp'], [name],
+                          to=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[np.dtype(dtype)])
+                ]
+
+    return nodes
 
 
 @mx_op.register("take")
@@ -2955,6 +2984,31 @@ def convert_where(node, **kwargs):
     ]
     return nodes
 
+
+@mx_op.register('_maximum_scalar')
+def convert_maximum_scalar(node, **kwargs):
+    """Map MXNet's _maximum_scalar
+    """
+    from onnx.helper import make_node
+    name, input_nodes, attrs = get_inputs(node, kwargs)
+
+    input_type = int(kwargs['in_type'])
+    dtype = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[input_type]
+
+    scalar = None
+    if 'float' in str(dtype):
+        scalar = float(attrs.get('scalar', '0'))
+    else:
+        scalar = int(attrs.get('scalar', '0'))
+
+    nodes = [
+        create_tensor([scalar], name+'_scalar', kwargs['initializer'], dtype=dtype),
+        make_node('Max', [input_nodes[0], name+'_scalar'], [name], name=name)
+        ]
+
+    return nodes
+
+
 @mx_op.register("_contrib_box_decode")
 def convert_contrib_box_decode(node, **kwargs):
     """Map MXNet's _contrib_box_decode operator attributes to onnx's operator.
@@ -3049,6 +3103,35 @@ def convert_contrib_AdaptiveAvgPooling2D(node, **kwargs):
     nodes = [
         make_node("GlobalAveragePool", [input_nodes[0]], [name], name=name)
     ]
+
+    return nodes
+
+
+@mx_op.register('broadcast_mod')
+def convert_broadcast_mod(node, **kwargs):
+    """Map MXNet's broadcast_mod operator
+    """
+    from onnx.helper import make_node
+    name, input_nodes, _ = get_inputs(node, kwargs)
+
+    # The behavior of MXNet mod is a mixture of np.mod and np.fmod
+    # note: the behavior when divison by 0 is supposed to be platform dependent
+    #       but here we set the result to 0 to be consistent with MXNet
+    nodes = [
+        make_node('Sub', [input_nodes[1], input_nodes[1]], [name+'_zero']),
+        make_node('Mod', [input_nodes[0], input_nodes[1]], [name+'_mod'], fmod=1),
+        make_node('Less', [input_nodes[0], name+'_zero'], [name+'_mask_0']),
+        make_node('Less', [input_nodes[1], name+'_zero'], [name+'_mask_1']),
+        make_node('Equal', [name+'_mod', name+'_zero'], [name+'_mask_2_']),
+        make_node('Not', [name+'_mask_2_'], [name+'_mask_2']),
+        make_node('Xor', [name+'_mask_0', name+'_mask_1'], [name+'_mask_']),
+        make_node('And', [name+'_mask_', name+'_mask_2'], [name+'_mask']),
+        make_node('Where', [name+'_mask', input_nodes[1], name+'_zero'], [name+'_adjustment']),
+        make_node('Add', [name+'_mod', name+'_adjustment'], [name+'_adjusted']),
+        make_node('Equal', [input_nodes[1], name+'_zero'], [name+'_mask_div_0']),
+        make_node('Where', [name+'_mask_div_0', name+'_zero', name+'_adjusted'], [name])
+        ]
+
     return nodes
 
 
@@ -3176,6 +3259,47 @@ def convert_reshape_like(node, **kwargs):
         make_node('Slice', [name+'_lhs_shape', name+'_lhs_end', name+'_lhs_dim'], [name+'_slice2_out']),
         make_node('Concat', [name+'_concat0_out', name+'_slice2_out'], [name+'_concat1_out'], axis=0),
         make_node('Reshape', [lhs, name+'_concat1_out'], [name], name=name)
+    ]
+
+    return nodes
+
+
+@mx_op.register("gather_nd")
+def convert_gather_nd(node, **kwargs):
+    """Map MXNet's gather_ND operator attributes to onnx's operator.
+    """
+    from onnx.helper import make_node
+    name, input_nodes, _ = get_inputs(node, kwargs)
+
+    data = input_nodes[0]
+    indices = input_nodes[1]
+
+    # Onnx Transpose operator takes perm as a parameter, so we need to 'pad'
+    # the input to a known dim (10 here)
+    perm = [9] + [i for i in range(1, 9)] + [0]
+
+    nodes = [
+        create_tensor([0], name+'_0', kwargs['initializer']),
+        create_tensor([1], name+'_1', kwargs['initializer']),
+        create_tensor([10], name+'_10', kwargs['initializer']),
+        # Generate 10-d filter
+        make_node('Shape', [indices], [name+'_indices_shape']),
+        make_node('Shape', [name+'_indices_shape'], [name+'_indices_dim']),
+        make_node('Sub', [name+'_10', name+'_indices_dim'], [name+'_sub0_out']),
+        make_node('Concat', [name+'_0', name+'_sub0_out'], [name+'_concat0_out'], axis=0),
+        make_node('Pad', [name+'_indices_shape', name+'_concat0_out', name+'_1'], [name+'_shape_10_dim']),
+        make_node('Reshape', [indices, name+'_shape_10_dim'], [name+'_indices_10_dim']),
+        make_node('Transpose', [name+'_indices_10_dim'], [name+'_transpose0_output'], perm=perm),
+        # Reshape filter to acutall dim for GatherND computation
+        make_node('Slice', [name+'_indices_shape', name+'_0', name+'_1'],
+                  [name+'_slice0_out']),
+        make_node('Slice', [name+'_indices_shape', name+'_1', name+'_indices_dim'],
+                  [name+'_slice1_out']),
+        make_node('Concat', [name+'_slice1_out', name+'_slice0_out'], [name+'_concat1_out'], axis=0),
+        make_node('Reshape', [name+'_transpose0_output', name+'_concat1_out'], [name+'_reshape0_out']),
+        # Cast data type for indicies
+        make_node('Cast', [name+'_reshape0_out'], [name+'_cast0_out'], to=int(onnx.TensorProto.INT64)),
+        make_node('GatherND', [data, name+'_cast0_out'], [name], name=name)
     ]
 
     return nodes

@@ -55,7 +55,7 @@ def op_export_test(model_name, Model, inputs, tmp_path, dummy_input=False):
         sess = rt.InferenceSession(onnx_file)
         dtype_0 = inputs[0].asnumpy().dtype
         input_dict = dict((sess.get_inputs()[i].name, inputs[i].asnumpy().astype(dtype_0)) for i in range(len(inputs)))
-        pred = sess.run(None, input_dict)[0]
+        pred = sess.run(None, input_dict)
         return pred
 
     # create a new model 
@@ -67,7 +67,11 @@ def op_export_test(model_name, Model, inputs, tmp_path, dummy_input=False):
     pred_onx = onnx_rt(onnx_file, inputs)
     if dummy_input:
         pred_nat = pred_nat[0]
-    assert_almost_equal(pred_nat, pred_onx)
+    if isinstance(pred_nat, list):
+        for i in range(len(pred_nat)):
+            assert_almost_equal(pred_nat[i], pred_onx[i])
+    else:
+        assert_almost_equal(pred_nat, pred_onx[0])
 
 
 def test_onnx_export_abs(tmp_path):
@@ -410,6 +414,62 @@ def test_onnx_export_where(tmp_path, dtype, shape):
     cond = mx.nd.random.randint(low=0, high=1, shape=shape, dtype='int32')
     op_export_test('where', M, [cond, x, y], tmp_path)
 
+
+# onnxruntime does not seem to support float64 and int32
+@pytest.mark.parametrize('dtype', ['float16', 'float32', 'int64'])
+@pytest.mark.parametrize('axis', [0, 2, -1, -2, -3])
+@pytest.mark.parametrize('is_ascend', [0, 1])
+@pytest.mark.parametrize('k', [1, 4])
+@pytest.mark.parametrize('dtype_i', ['float32', 'int32', 'int64'])
+@pytest.mark.parametrize('ret_typ', ['value', 'indices', 'both'])
+def test_onnx_export_topk(tmp_path, dtype, axis, is_ascend, k, dtype_i, ret_typ):
+    A = mx.random.uniform(0, 100, (4, 5, 6)).astype(dtype)
+    M = def_model('topk', axis=axis, is_ascend=is_ascend, k=k, dtype=dtype_i, ret_typ=ret_typ)
+    op_export_test('topk', M, [A], tmp_path)
+
+
+def test_onnx_link_op_with_multiple_outputs(tmp_path):
+    A = mx.random.uniform(0, 100, (4, 5, 6))
+    class Model1(HybridBlock):
+        def __init__(self, **kwargs):
+            super(Model1, self).__init__(**kwargs)
+
+        def hybrid_forward(self, F, x):
+            out1, out2 = F.topk(x, k=3, ret_typ='both')
+            out11 = out1 ** 2
+            out22 = out2 ** 3
+            return out11, out22
+    op_export_test('link_op_with_multiple_outputs_case1', Model1, [A], tmp_path)
+
+    class Model2(HybridBlock):
+        def __init__(self, **kwargs):
+            super(Model2, self).__init__(**kwargs)
+
+        def hybrid_forward(self, F, x):
+            out_ = F.topk(x, k=3, ret_typ='value')
+            out = out_ ** 3
+            return out
+    op_export_test('link_op_with_multiple_outputs_case2', Model2, [A], tmp_path)
+
+    class Model3(HybridBlock):
+        def __init__(self, **kwargs):
+            super(Model3, self).__init__(**kwargs)
+
+        def hybrid_forward(self, F, x):
+            out_ = F.topk(x, k=3, ret_typ='indices')
+            out = out_ ** 3
+            return out
+    op_export_test('link_op_with_multiple_outputs_case3', Model3, [A], tmp_path)
+
+
+@pytest.mark.parametrize('dtype', ['float16', 'float32', 'float64', 'int32', 'int64'])
+@pytest.mark.parametrize('shape', [(3, 4, 5), (1, 4, 1, 7)])
+def test_onnx_maximum_scalar(tmp_path, dtype, shape):
+    x = mx.random.uniform(0, 10, shape).astype(dtype)
+    M = def_model('maximum', right=5)
+    op_export_test('_maximum_scalar', M, [x], tmp_path)
+
+
 @pytest.mark.parametrize('dtype', ['float16', 'float32'])
 @pytest.mark.parametrize('fmt', ['corner', 'center'])
 @pytest.mark.parametrize('clip', [-1., 0., .5, 5.])
@@ -422,6 +482,7 @@ def test_onnx_export_contrib_box_decode(tmp_path, dtype, fmt, clip):
     op_export_test('contrib_box_decode', M1, [data, anchors], tmp_path)
     M2 = def_model('contrib.box_decode', format=fmt, clip=clip, std0=0.3, std1=1.4, std2=0.5, std3=1.6)
     op_export_test('contrib_box_decode', M1, [data, anchors], tmp_path)
+
 
 @pytest.mark.parametrize('dtype', ['float16', 'float32'])
 def test_onnx_export_contrib_AdaptiveAvgPooling2D(tmp_path, dtype):
@@ -463,3 +524,18 @@ def test_onnx_export_reshape_like(tmp_path, dtype):
     op_export_test('reshape_like3', M3, [x, y], tmp_path)
     M4 = def_model('reshape_like', lhs_begin=0, lhs_end=None, rhs_begin=1, rhs_end=None)
     op_export_test('reshape_like4', M4, [x, y], tmp_path)
+
+
+@pytest.mark.parametrize('dtype', ['int32', 'int64', 'float16', 'float32', 'float64'])
+def test_onnx_export_gather_nd(tmp_path, dtype):
+    # y[0] == dim(x)
+    x1 = mx.random.uniform(-100, 100, (4, 5, 6, 7)).astype(dtype)
+    y1 = mx.random.randint(-4, 4, (4, 4, 4)).astype(dtype)
+    M1 = def_model('gather_nd')
+    op_export_test('gather_nd1', M1, [x1, y1], tmp_path)
+    # y[0] < dim(x)
+    x2 = mx.random.uniform(-100, 100, (4, 5, 6, 7)).astype(dtype)
+    y2 = mx.random.randint(-4, 4, (2,3,4)).astype(dtype)
+    M2 = def_model('gather_nd')
+    op_export_test('gather_nd2', M2, [x2, y2], tmp_path)
+
