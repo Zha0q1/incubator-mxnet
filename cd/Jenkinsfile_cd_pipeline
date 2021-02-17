@@ -28,7 +28,7 @@ properties([pipelineTriggers([githubRelease()])])
 pipeline {
   agent {
     label 'restricted-utility'
-  }  
+  }
 
   options {
     // Because each pass of the CD pipeline
