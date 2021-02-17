@@ -23,6 +23,8 @@
 // MXNet Continuous Delivery Pipeline
 // Orchestrates the release of the different artifact by calling downstream release jobs.
 
+properties([pipelineTriggers([githubRelease()])])
+
 pipeline {
   agent {
   }
