@@ -3064,12 +3064,12 @@ def test_np_memory_array_function():
         assert op(data_mx, np.ones((5, 0))) == op(data_np, _np.ones((5, 0)))
 
 
-@with_seed()
-@use_np
-@with_array_function_protocol
-@unittest.skip('failed in cd')
-def test_np_array_function_protocol():
-    check_interoperability(_NUMPY_ARRAY_FUNCTION_LIST)
+#@with_seed()
+#@use_np
+#@with_array_function_protocol
+#@unittest.skip('failed in cd')
+#def test_np_array_function_protocol():
+#    check_interoperability(_NUMPY_ARRAY_FUNCTION_LIST)
 
 
 @with_seed()
