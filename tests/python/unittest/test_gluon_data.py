@@ -141,7 +141,6 @@ def test_image_folder_dataset():
     assert len(dataset.items) == 16
 
 @with_seed()
-@unittest.skip("skipping flaky test - see https://github.com/apache/incubator-mxnet/issues/19877")
 def test_list_dataset():
     for num_worker in range(0, 3):
         data = mx.gluon.data.DataLoader([([1,2], 0), ([3, 4], 1)], batch_size=1, num_workers=num_worker)
@@ -251,7 +250,6 @@ def _batchify(data):
         nd.array(y_lens, ctx=context.Context('cpu_shared', 0)))
 
 @with_seed()
-@unittest.skip("skipping flaky test - see https://github.com/apache/incubator-mxnet/issues/19877")
 def test_multi_worker_forked_data_loader():
     data = _Dummy(False)
     loader = DataLoader(data, batch_size=40, batchify_fn=_batchify, num_workers=2)
@@ -266,7 +264,6 @@ def test_multi_worker_forked_data_loader():
             pass
 
 @with_seed()
-@unittest.skip("skipping flaky test - see https://github.com/apache/incubator-mxnet/issues/19877")
 def test_multi_worker_dataloader_release_pool():
     # will trigger too many open file if pool is not released properly
     if os.name == 'nt':
