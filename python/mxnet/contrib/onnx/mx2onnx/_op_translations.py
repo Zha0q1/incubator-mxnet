@@ -868,7 +868,7 @@ def convert_softmax(node, **kwargs):
     data = input_nodes[0]
 
     # use op set 11 ONNX Softmax
-    if axis == -1 and temperature == 1.:
+    if axis == -1 and temperature == 1. and False:
         nodes = []
         if use_length == "True":
             # magic number, this is fp16 min
@@ -1185,7 +1185,9 @@ def scalar_op_helper(node, op_name, **kwargs):
                 else:
                     new_initializer = numpy_helper.to_array(i) - scalar_value[0]
             elif op_name == 'Add':
-                new_initializer = numpy_helper.to_array(i) + scalar_value[0]
+                print(numpy_helper.to_array(i))
+                print(scalar_value[0])
+                new_initializer = numpy_helper.to_array(i).flatten() + scalar_value[0]
             elif op_name == 'Div':
                 if name.startswith("_rdivscalar"):
                     new_initializer = scalar_value[0] / numpy_helper.to_array(i)
@@ -1228,6 +1230,14 @@ def scalar_op_helper(node, op_name, **kwargs):
         new_a_node = input_nodes[0] + str(kwargs["idx"])
         tensor_node = onnx.helper.make_tensor_value_info(new_a_node, data_type, dims)
 
+        print(dims)
+        print(data_type)
+        print(new_initializer.shape)
+        
+        print('what the fuck?')
+        print(input_nodes[0])
+        print(str(kwargs["idx"]))
+        print(new_a_node)
         initializer.append(
             onnx.helper.make_tensor(
                 name=new_a_node,
@@ -1273,6 +1283,10 @@ def convert_add_scalar(node, **kwargs):
     Creates a new node for the input scalar value, adds it to the initializer
     and return multiple created nodes.
     """
+    print(node)
+    print('--')
+    #print(kwargs)
+    print('~~~')
     return scalar_op_helper(node, 'Add', **kwargs)
 
 # Convert scalar value into node and pass it as input to mul_node
@@ -2758,7 +2772,8 @@ def convert_embedding(node, **kwargs):
 
     nodes = [
         make_node('Cast', [input_nodes[0]], [name+'_indices_casted'], to=int(TensorProto.INT64)),
-        make_node('Gather', [input_nodes[1], name+'_indices_casted'], [name], axis=axis, name=name)
+        make_node('Gather', [input_nodes[1], name+'_indices_casted'], [name+'_gather'], axis=axis),
+        make_node('Cast', [name+'_gather'], [name], to=int(TensorProto.FLOAT), name=name+'_zzzz1')
     ]
 
     return nodes
@@ -2841,8 +2856,14 @@ def convert_zeros(node, **kwargs):
     dtype = attrs.get('dtype')
     data_type = onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[np.dtype(dtype)]
     shape = convert_string_to_list(attrs.get('shape'))
+    
+    print('old', shape)
+    shape = [x if x else 1 for x in shape]
+    print('new', shape)
+    
     create_tensor(shape, name+'_shape', kwargs['initializer'])
     tensor_value = make_tensor(name+'_zero', data_type, [1], [0])
+
     nodes = [
         make_node('ConstantOfShape', [name+'_shape'], [name], name=name, value=tensor_value)
     ]
@@ -4061,6 +4082,138 @@ def convert_sequence_reverse(node, **kwargs):
             make_node('Cast', [input_nodes[1]], [name+'_seq_len'], to=int(TensorProto.INT64)),
             make_node('ReverseSequence', [input_nodes[0], name+'_seq_len'], [name],
                       batch_axis=batch_axis, time_axis=time_axis)
+        ]
+
+    return nodes
+
+
+@mx_op.register('one_hot')
+def convert_one_hot(node, **kwargs):
+    """Map MXNet's one_hot operator attributes to onnx's OneHot operator
+    """
+    from onnx.helper import make_node
+    from onnx import TensorProto
+    name, input_nodes, attrs = get_inputs(node, kwargs)
+
+    depth = int(attrs.get('depth'))
+    on_value = float(attrs.get('on_value', 1.))
+    off_value = float(attrs.get('off_value', 0.))
+    dtype = attrs.get('dtype', 'float32')
+    print('in one hot', dtype)
+    create_tensor([off_value, on_value], name+'_values', kwargs['initializer'], dtype=dtype)
+    create_tensor([depth], name+'_depth', kwargs['initializer'])
+    nodes = [
+        make_node('Cast', [input_nodes[0]], [name+'_cast'], to=int(TensorProto.INT64)),
+        make_node('OneHot', [name+'_cast', name+'_depth', name+'_values'], [name], name=name)
+    ]
+
+    return nodes
+
+
+@mx_op.register('_random_uniform_like')
+def convert_random_uniform_like(node, **kwargs):
+    """Map MXNet's random_uniform_like operator attributes to onnx's RandomUniformLike operator
+    """
+    from onnx.helper import make_node
+    name, input_nodes, attrs = get_inputs(node, kwargs)
+
+    low = float(attrs.get('low', 0.))
+    high = float(attrs.get('high', 1.))
+    dtype = attrs.get('dtype', 'float32')
+
+    nodes = [
+        make_node('RandomUniformLike', [input_nodes[0]], [name], name=name,
+                  dtype=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[np.dtype(dtype)],
+                  low=low, high=high)
+    ]
+
+    return nodes
+
+
+@mx_op.register("RNN")
+def convert_RNN(node, **kwargs):
+    """Map MXNet's RNN operator attributes to onnx's operators
+    and return the created node.
+    """
+    from onnx.helper import make_node
+    from onnx import TensorProto
+
+    name, input_nodes, attrs = get_inputs(node, kwargs)
+
+    mode = str(attrs.get('mode'))
+    if mode != 'lstm':
+        raise NotImplementedError('Currently RNN onnx export only supports lstm mode')
+
+    bidirectional = str(attrs.get('bidirectional', 'False'))
+    if bidirectional != 'False':
+        raise NotImplementedError('Currently RNN onnx export only supports bidirectional is False')
+
+    num_layers = int(attrs.get('num_layers', '1'))
+    if num_layers != 1:
+        raise NotImplementedError('Currently RNN onnx export only supports num_layers equals to 1')
+
+    p = float(attrs.get('p', '0'))
+    if p != 0:
+        raise NotImplementedError('Currently RNN onnx export only supports p equals to 0')
+
+    use_sequence_length = str(attrs.get('use_sequence_length', 'False'))
+    if use_sequence_length != 'False':
+        raise NotImplementedError('Currently RNN onnx export only supports use_sequence_length equals to False')
+
+    projection_size = str(attrs.get('projection_size', 'None'))
+    if projection_size != 'None':
+        raise NotImplementedError('Currently RNN onnx export only supports projection_size equals to None')
+
+    state_size = int(attrs.get('state_size'))
+    state_outputs = str(attrs.get('state_outputs', 'False'))
+
+    data = input_nodes[0]
+    param = input_nodes[1]
+    initial_h = input_nodes[2]
+    initial_c = input_nodes[3]
+
+    create_tensor([0], name+'_0', kwargs['initializer'])
+    create_tensor([1], name+'_1', kwargs['initializer'])
+    create_tensor([2], name+'_2', kwargs['initializer'])
+    create_tensor([3], name+'_3', kwargs['initializer'])
+    create_tensor([4*state_size], name+'_4*state_size', kwargs['initializer'])
+    create_tensor([8*state_size], name+'_8*state_size', kwargs['initializer'])
+    create_tensor([4*state_size*state_size], name+'_4*state_size^2', kwargs['initializer'])
+    create_tensor([1, 4*state_size, state_size], name+'_R_shape', kwargs['initializer'])
+    create_tensor([1, 8*state_size], name+'_B_shape', kwargs['initializer'])
+
+    nodes = [
+        make_node('Shape', [data], [name+'_shape']),
+        make_node('Split', [name+'_shape'], [name+'_seq_length', name+'_batch_size', name+'_input_size']),
+        # get W
+        make_node('Mul', [name+'_4*state_size', name+'_input_size'], [name+'_mul0']),
+        make_node('Slice', [param, name+'_0', name+'_mul0'], [name+'_W_']),
+        make_node('Concat', [name+'_1', name+'_4*state_size', name+'_input_size'], [name+'_W_shape'], axis=0),
+        make_node('Reshape', [name+'_W_', name+'_W_shape'], [name+'_W']),
+        # get R
+        make_node('Add', [name+'_mul0', name+'_4*state_size^2'], [name+'_add0']),
+        make_node('Slice', [param, name+'_mul0', name+'_add0'], [name+'_R_']),
+        make_node('Reshape', [name+'_R_', name+'_R_shape'], [name+'_R']),
+        # get B
+        make_node('Add', [name+'_add0', name+'_8*state_size'], [name+'_add1']),
+        make_node('Slice', [param, name+'_add0', name+'_add1'], [name+'_B_']),
+        make_node('Reshape', [name+'_B_', name+'_B_shape'], [name+'_B']),
+        # get seq_len
+        make_node('Tile', [name+'_seq_length', name+'_batch_size'], [name+'_seq_len_']),
+        make_node("Cast", [name+'_seq_len_'], [name+"_seq_len"], to=int(TensorProto.INT32)),
+    ]
+
+    if state_outputs == 'False':
+        nodes += [
+            make_node('LSTM', [data, name+'_W', name+'_R', name+'_B', name+'_seq_len', initial_h, initial_c],
+                [name+'_out'], hidden_size=state_size),
+            make_node('Squeeze', [name+'_out'], [name], axes=[1]),
+        ]
+    else:
+        nodes += [
+            make_node('LSTM', [data, name+'_W', name+'_R', name+'_B', name+'_seq_len', initial_h, initial_c],
+                [name+'0_', name+'1', name+'2'], hidden_size=state_size),
+            make_node('Squeeze', [name+'0_'], [name], axes=[1]),
         ]
 
     return nodes

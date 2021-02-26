@@ -140,6 +140,7 @@ class MXNetGraph(object):
         _, out_shapes, _ = sym.infer_shape(**inputs)
 
         out_names = list()
+        print(sym.list_outputs())
         for name in sym.list_outputs():
             if name.endswith('_output'):
                 out_names.append(name[:-len('_output')])
@@ -155,7 +156,7 @@ class MXNetGraph(object):
         args = {n: mapping.TENSOR_TYPE_TO_NP_TYPE[in_type] for n in sym.list_inputs()}
         _, out_type, _ = sym.infer_type(**args)
         out_types = [mapping.NP_TYPE_TO_TENSOR_TYPE[o(0).dtype] for o in out_type]
-
+        print('out types', out_types)
         assert len(out_types) == len(out_names)
 
         # bind output shapes with output names
