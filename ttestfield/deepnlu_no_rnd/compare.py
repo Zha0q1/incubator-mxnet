@@ -55,3 +55,4 @@ for i in range(5):
     print('~~~~')
     print()
 
+assert_almost_equal(mx_out[0], pred_on[0])
