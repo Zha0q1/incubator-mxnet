@@ -34,7 +34,6 @@ if [[ $VARIANT == cu112* ]]; then
     CUDA_PATCH_VERSION='11.4.1.1026-1'
     CUDA_LIBS_VERSION='10.2.3.135-1'
     CUDA_SOLVER_VERSION='11.1.0.135-1'
-    CUDA_NVTX_VERSION='11.2.67-1'
     LIBCUDA_VERSION='460.32.03-0ubuntu1'
     LIBCUDNN_VERSION='8.1.0.77-1+cuda11.2'
     LIBNCCL_VERSION='2.8.4-1+cuda11.2'
@@ -135,14 +134,15 @@ if [[ $VARIANT == cu112* ]]; then
       "libcusolver-${CUDA_MAJOR_DASH}_${CUDA_SOLVER_VERSION}_amd64.deb" \
       "libcusolver-dev-${CUDA_MAJOR_DASH}_${CUDA_SOLVER_VERSION}_amd64.deb" \
       "cuda-nvcc-${CUDA_MAJOR_DASH}_${CUDA_VERSION}_amd64.deb" \
-      "cuda-nvtx-${CUDA_MAJOR_DASH}_${CUDA_NVTX_VERSION}_amd64.deb" \
+      "cuda-nvtx-${CUDA_MAJOR_DASH}_${CUDA_VERSION}_amd64.deb" \
       "libcuda1-${LIBCUDA_MAJOR}_${LIBCUDA_VERSION}_amd64.deb" \
       "cuda-nvprof-${CUDA_MAJOR_DASH}_${CUDA_VERSION}_amd64.deb" \
       "nvidia-${LIBCUDA_MAJOR}_${LIBCUDA_VERSION}_amd64.deb" \
-    )
-    ml_files=( \
       "libcudnn${LIBCUDNN_MAJOR}-dev_${LIBCUDNN_VERSION}_amd64.deb" \
-      "libnccl-dev_${LIBNCCL_VERSION}_amd64.deb" \
+    )
+    other_files=( \
+    # libnccl-dev
+      "http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/libnccl-dev_2.8.4-1+cuda11.2_amd64.deb" \
     )
 elif [[ $VARIANT == cu110* ]]; then
     cuda_files=( \
@@ -378,6 +378,13 @@ if [[ ! -d $DEPS_PATH/usr/local/cuda-${CUDA_MAJOR_VERSION} ]]; then
     do
         echo "Installing $item"
         curl -sL "http://developer.download.nvidia.com/compute/machine-learning/repos/${os_id}/x86_64/${item}" -o package.deb
+        dpkg -X package.deb ${prefix}
+        rm package.deb
+    done
+    for item in ${other_files[*]}
+    do
+        echo "Installing $item"
+        curl -sL "${item}" -o package.deb
         dpkg -X package.deb ${prefix}
         rm package.deb
     done
