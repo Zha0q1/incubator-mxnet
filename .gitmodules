@@ -28,3 +28,6 @@
 [submodule "3rdparty/intgemm"]
 	path = 3rdparty/intgemm
 	url = https://github.com/kpu/intgemm
+[submodule "onnx-simplifier"]
+	path = onnx-simplifier
+	url = https://github.com/daquexian/onnx-simplifier
