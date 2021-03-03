@@ -869,7 +869,7 @@ def convert_softmax(node, **kwargs):
     data = input_nodes[0]
 
     # use op set 11 ONNX Softmax
-    if axis == -1 and temperature == 1. and False:
+    if axis == -1 and temperature == 1.:
         nodes = []
         if use_length == "True":
             # magic number, this is fp16 min
@@ -1186,8 +1186,6 @@ def scalar_op_helper(node, op_name, **kwargs):
                 else:
                     new_initializer = numpy_helper.to_array(i) - scalar_value[0]
             elif op_name == 'Add':
-                print(numpy_helper.to_array(i))
-                print(scalar_value[0])
                 new_initializer = numpy_helper.to_array(i).flatten() + scalar_value[0]
             elif op_name == 'Div':
                 if name.startswith("_rdivscalar"):
@@ -1231,14 +1229,6 @@ def scalar_op_helper(node, op_name, **kwargs):
         new_a_node = input_nodes[0] + str(kwargs["idx"])
         tensor_node = onnx.helper.make_tensor_value_info(new_a_node, data_type, dims)
 
-        print(dims)
-        print(data_type)
-        print(new_initializer.shape)
-        
-        print('what the fuck?')
-        print(input_nodes[0])
-        print(str(kwargs["idx"]))
-        print(new_a_node)
         initializer.append(
             onnx.helper.make_tensor(
                 name=new_a_node,
@@ -1284,10 +1274,6 @@ def convert_add_scalar(node, **kwargs):
     Creates a new node for the input scalar value, adds it to the initializer
     and return multiple created nodes.
     """
-    print(node)
-    print('--')
-    #print(kwargs)
-    print('~~~')
     return scalar_op_helper(node, 'Add', **kwargs)
 
 # Convert scalar value into node and pass it as input to mul_node
@@ -2773,8 +2759,8 @@ def convert_embedding(node, **kwargs):
 
     nodes = [
         make_node('Cast', [input_nodes[0]], [name+'_indices_casted'], to=int(TensorProto.INT64)),
-        make_node('Gather', [input_nodes[1], name+'_indices_casted'], [name+'_gather'], axis=axis),
-        make_node('Cast', [name+'_gather'], [name], to=int(TensorProto.FLOAT), name=name+'_zzzz1')
+        make_node('Gather', [input_nodes[1], name+'_indices_casted'], [name], axis=axis),
+        #make_node('Cast', [name+'_gather'], [name], to=int(TensorProto.FLOAT), name=name+'_zzzz1')
     ]
 
     return nodes
@@ -4104,8 +4090,8 @@ def convert_one_hot(node, **kwargs):
     create_tensor([off_value, on_value], name+'_values', kwargs['initializer'], dtype=dtype)
     create_tensor([depth], name+'_depth', kwargs['initializer'])
     nodes = [
-        make_node('Cast', [input_nodes[0]], [name+'_cast'], to=int(TensorProto.INT64)),
-        make_node('OneHot', [name+'_cast', name+'_depth', name+'_values'], [name], name=name)
+        #make_node('Cast', [input_nodes[0]], [name+'_cast'], to=int(TensorProto.INT64)),
+        make_node('OneHot', [input_nodes[0], name+'_depth', name+'_values'], [name], name=name)
     ]
 
     return nodes
