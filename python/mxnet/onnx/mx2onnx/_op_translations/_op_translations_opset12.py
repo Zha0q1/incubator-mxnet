@@ -358,8 +358,33 @@ def convert_fully_connected(node, **kwargs):
     flatten = get_boolean_attribute_value(attrs, 'flatten')
     no_bias = get_boolean_attribute_value(attrs, 'no_bias')
     num_hidden = int(attrs.get('num_hidden'))
+    
 
     nodes = []
+    if 'dotproductselfattentioncell' in name:
+        create_tensor([12, 192, 768], name+'_interleaved_shape', kwargs['initializer'])
+        create_tensor([768, 768], name+'_w_shape', kwargs['initializer'])
+        nodes += [
+            make_node('Reshape', [input_nodes[1], name+'_interleaved_shape'], [name+'_interleaved_w']),
+            make_node('Split', [name+'_interleaved_w'], [name+'_q_w_', name+'_k_w_', name+'_v_w_'], axis=1),
+            make_node('Reshape', [name+'_q_w_', name+'_w_shape'], [name+'_q_w_reshaped']),
+            make_node('Reshape', [name+'_k_w_', name+'_w_shape'], [name+'_k_w_reshaped']),
+            make_node('Reshape', [name+'_v_w_', name+'_w_shape'], [name+'_v_w_reshaped']),
+            make_node('Transpose', [name+'_q_w_reshaped'], [name+'_q_w']),
+            make_node('Transpose', [name+'_k_w_reshaped'], [name+'_k_w']),
+            make_node('Transpose', [name+'_v_w_reshaped'], [name+'_v_w']),
+            make_node('Split', [input_nodes[2]], [name+'_q_b', name+'_k_b', name+'_v_b'], axis=0),
+            make_node('MatMul', [input_nodes[0], name+'_q_w'], [name+'_q_']),
+            make_node('MatMul', [input_nodes[0], name+'_k_w'], [name+'_k_']),
+            make_node('MatMul', [input_nodes[0], name+'_v_w'], [name+'_v_']),
+            make_node('Add', [name+'_q_', name+'_q_b'], [name+'0']),
+            make_node('Add', [name+'_k_', name+'_k_b'], [name+'1']),
+            make_node('Add', [name+'_v_', name+'_v_b'], [name+'2']),
+        ]
+        return nodes
+
+
+
     if flatten:
         nodes += [
             make_node('Flatten', [input_nodes[0]], [name+'_data_flattened'])
@@ -2731,12 +2756,46 @@ def convert_layer_norm(node, **kwargs):
 def convert_matmul_selfatt_qk(node, **kwargs):
     """Map MXNet's _contrib_interleaved_matmul_selfatt_qk operator
     """
+    
+    from onnx.helper import make_node
+    from onnx import TensorProto
+    print(node['inputs'])
+    import copy
+    inp0 = node['inputs'][0]
+    inp1 = copy.deepcopy(inp0)
+    inp1[1] = 1
+    node['inputs'] = [inp0, inp1]
+    print(node['inputs'])
+    name, input_nodes, attrs = get_inputs(node, kwargs)
+    print(input_nodes)
+
+    heads = int(attrs.get('heads'))
+    print(heads)
+
+    bs = 50
+    sq = 128
+
+    create_tensor([8], name+"_sqrt_head_dim", kwargs["initializer"], dtype='float32')
+    create_tensor([sq, bs, 12, 64], name+"_qkv_shape", kwargs["initializer"])
+    create_tensor([bs * 12, sq, sq], name+"_out_shape", kwargs["initializer"])
+    nodes = [
+        make_node('Reshape', [input_nodes[0], name+"_qkv_shape"], [name+'_q_']),
+        make_node('Reshape', [input_nodes[1], name+"_qkv_shape"], [name+'_k_']),
+        make_node('Transpose', [name+'_q_'], [name+'_q'], perm=[1, 2, 0, 3]),
+        make_node('Transpose', [name+'_k_'], [name+'_k'], perm=[1, 2, 3, 0]),
+        make_node('MatMul', [name+'_q', name+'_k'], [name+'_qk']),
+        make_node('Reshape', [name+'_qk', name+'_out_shape'], [name+'_qk_reshaped']),
+        make_node('Div', [name+'_qk_reshaped', name+'_sqrt_head_dim'], [name])
+    ]
+    return nodes
+
+    '''
     from onnx.helper import make_node
     from onnx import TensorProto
     name, input_nodes, attrs = get_inputs(node, kwargs)
 
     heads = int(attrs.get('heads'))
-
+    
     # a, b, c, d, e are seq_len, batch_size, num_heads, 3, head_dim respectively
     create_tensor([0], name+"_0", kwargs["initializer"])
     create_tensor([1], name+"_1", kwargs["initializer"])
@@ -2792,11 +2851,45 @@ def convert_matmul_selfatt_qk(node, **kwargs):
     ]
 
     return nodes
+    '''
 
 @mx_op.register("_contrib_interleaved_matmul_selfatt_valatt")
 def convert_contrib_interleaved_matmul_selfatt_valatt(node, **kwargs):
     """Map MXNet's _contrib_interleaved_matmul_selfatt_valatt operator attributes to onnx's operator.
     """
+    
+    
+    from onnx.helper import make_node
+    print(node['inputs'])
+    inp0 = node['inputs'][0]
+    inp0[1] = 2
+    inp1 = node['inputs'][1]
+    node['inputs'] = [inp0, inp1]
+    
+    print(node['inputs'])
+    name, input_nodes, attrs = get_inputs(node, kwargs)
+    print(input_nodes)
+    num_heads = int(attrs.get('heads'))
+    
+    bs = 50
+    sq = 128
+
+    create_tensor([sq, bs, 12, 64], name+"_qkv_shape", kwargs["initializer"])
+    create_tensor([bs * 12, sq, 64], name+"_v_shape", kwargs["initializer"])
+    create_tensor([bs, 12, sq, 64], name+"_before_transpose", kwargs["initializer"])
+    create_tensor([sq, bs, 768], name+"_out_shape", kwargs["initializer"])
+    nodes = [
+        make_node('Reshape', [input_nodes[0], name+"_qkv_shape"], [name+'_v__']),
+        make_node('Transpose', [name+'_v__'], [name+'_v_'], perm=[1, 2, 0, 3]),
+        make_node('Reshape', [name+'_v_', name+'_v_shape'], [name+'_v']),
+        make_node('MatMul', [input_nodes[1], name+'_v'], [name+'_matmul']),
+        make_node('Reshape', [name+'_matmul', name+'_before_transpose'], [name+'_bt']),
+        make_node('Transpose', [name+'_bt'], [name+'_transpose'], perm=[2, 0, 1, 3]),
+        make_node('Reshape', [name+'_transpose', name+'_out_shape'], [name])
+    ]
+    return nodes
+    
+    '''
     from onnx.helper import make_node
     name, input_nodes, attrs = get_inputs(node, kwargs)
     qkv = input_nodes[0]
@@ -2839,7 +2932,7 @@ def convert_contrib_interleaved_matmul_selfatt_valatt(node, **kwargs):
         make_node("Reshape", [name+"_transpose2_output", name+"_reshape4_shape"], [name], name=name)
     ]
     return nodes
-
+    '''
 
 @mx_op.register("broadcast_axis")
 def convert_broadcast_axis(node, **kwargs):
