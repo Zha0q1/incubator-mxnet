@@ -344,6 +344,11 @@ def convert_crop(node, **kwargs):
 
     return [crop_node]
 
+cheat_sheet = {
+    'qkv_hidden': 768,
+    'num_heads': 12,
+    'head_dim': 64
+}
 
 @mx_op.register("FullyConnected")
 def convert_fully_connected(node, **kwargs):
@@ -362,10 +367,13 @@ def convert_fully_connected(node, **kwargs):
 
     nodes = []
     if 'dotproductselfattentioncell' in name:
-        create_tensor([12, 192, 768], name+'_interleaved_w_shape', kwargs['initializer'])
-        create_tensor([12, 192], name+'_interleaved_b_shape', kwargs['initializer'])
-        create_tensor([768, 768], name+'_w_shape', kwargs['initializer'])
-        create_tensor([768], name+'_b_shape', kwargs['initializer'])
+        qkv_hidden = cheat_sheet['qkv_hidden']
+        num_heads = cheat_sheet['num_heads']
+        head_dim = cheat_sheet['head_dim']
+        create_tensor([num_heads, 3 * head_dim, qkv_hidden], name+'_interleaved_w_shape', kwargs['initializer'])
+        create_tensor([num_heads, 3 * head_dim], name+'_interleaved_b_shape', kwargs['initializer'])
+        create_tensor([qkv_hidden, qkv_hidden], name+'_w_shape', kwargs['initializer'])
+        create_tensor([qkv_hidden], name+'_b_shape', kwargs['initializer'])
         nodes += [
             make_node('Reshape', [input_nodes[1], name+'_interleaved_w_shape'], [name+'_interleaved_w']),
             make_node('Split', [name+'_interleaved_w'], [name+'_q_w_', name+'_k_w_', name+'_v_w_'], axis=1),
@@ -2762,34 +2770,32 @@ def convert_layer_norm(node, **kwargs):
 def convert_matmul_selfatt_qk(node, **kwargs):
     """Map MXNet's _contrib_interleaved_matmul_selfatt_qk operator
     """
-    
     from onnx.helper import make_node
     from onnx import TensorProto
-    print(node['inputs'])
     import copy
+
     inp0 = node['inputs'][0]
     inp1 = copy.deepcopy(inp0)
     inp1[1] = 1
     node['inputs'] = [inp0, inp1]
-    print(node['inputs'])
     name, input_nodes, attrs = get_inputs(node, kwargs)
-    print(input_nodes)
 
-    heads = int(attrs.get('heads'))
-    print(heads)
+    qkv_hidden = cheat_sheet['qkv_hidden']
+    num_heads = cheat_sheet['num_heads']
+    head_dim = cheat_sheet['head_dim']
 
-    bs = 50
-    sq = 128
-
-    create_tensor([8], name+"_sqrt_head_dim", kwargs["initializer"], dtype='float32')
-    create_tensor([sq, bs, 12, 64], name+"_qkv_shape", kwargs["initializer"])
-    create_tensor([bs * 12, sq, sq], name+"_out_shape", kwargs["initializer"])
+    create_tensor([-1], name+'_m1', kwargs['initializer'])
+    create_tensor([int(head_dim ** 0.5)], name+'_sqrt_head_dim', kwargs['initializer'], dtype='float32')
+    create_tensor([0, 0, num_heads, head_dim], name+"_qkv_shape", kwargs['initializer'])
     nodes = [
-        make_node('Reshape', [input_nodes[0], name+"_qkv_shape"], [name+'_q_']),
-        make_node('Reshape', [input_nodes[1], name+"_qkv_shape"], [name+'_k_']),
+        make_node('Shape', [input_nodes[0]], [name+'_shape']),
+        make_node('Split', [name+'_shape'], [name+'_sq', name+'_bs', name+'___'], axis=0),
+        make_node('Reshape', [input_nodes[0], name+'_qkv_shape'], [name+'_q_']),
+        make_node('Reshape', [input_nodes[1], name+'_qkv_shape'], [name+'_k_']),
         make_node('Transpose', [name+'_q_'], [name+'_q'], perm=[1, 2, 0, 3]),
         make_node('Transpose', [name+'_k_'], [name+'_k'], perm=[1, 2, 3, 0]),
         make_node('MatMul', [name+'_q', name+'_k'], [name+'_qk']),
+        make_node('Concat', [name+'_m1', name+'_sq', name+'_sq'], [name+'_out_shape'], axis=0),
         make_node('Reshape', [name+'_qk', name+'_out_shape'], [name+'_qk_reshaped']),
         make_node('Div', [name+'_qk_reshaped', name+'_sqrt_head_dim'], [name])
     ]
@@ -2866,29 +2872,31 @@ def convert_contrib_interleaved_matmul_selfatt_valatt(node, **kwargs):
     
     
     from onnx.helper import make_node
-    print(node['inputs'])
     inp0 = node['inputs'][0]
     inp0[1] = 2
     inp1 = node['inputs'][1]
     node['inputs'] = [inp0, inp1]
-    
-    print(node['inputs'])
     name, input_nodes, attrs = get_inputs(node, kwargs)
-    print(input_nodes)
-    num_heads = int(attrs.get('heads'))
-    
-    bs = 50
-    sq = 128
 
-    create_tensor([sq, bs, 12, 64], name+"_qkv_shape", kwargs["initializer"])
-    create_tensor([bs * 12, sq, 64], name+"_v_shape", kwargs["initializer"])
-    create_tensor([bs, 12, sq, 64], name+"_before_transpose", kwargs["initializer"])
-    create_tensor([sq, bs, 768], name+"_out_shape", kwargs["initializer"])
+    qkv_hidden = cheat_sheet['qkv_hidden']
+    num_heads = cheat_sheet['num_heads']
+    head_dim = cheat_sheet['head_dim']
+
+    create_tensor([head_dim], name+'_head_dim', kwargs["initializer"])
+    create_tensor([0], name+'_0', kwargs["initializer"])
+    create_tensor([-1], name+'_m1', kwargs["initializer"])
+    create_tensor([0, 0, num_heads, head_dim], name+"_qkv_shape", kwargs["initializer"])
+    create_tensor([0, 0, -1], name+"_out_shape", kwargs["initializer"])
     nodes = [
+        make_node('Shape', [input_nodes[0]], [name+'_shape']),
+        make_node('Split', [name+'_shape'], [name+'_sq', name+'_bs', name+'___'], axis=0),
         make_node('Reshape', [input_nodes[0], name+"_qkv_shape"], [name+'_v__']),
         make_node('Transpose', [name+'_v__'], [name+'_v_'], perm=[1, 2, 0, 3]),
+        make_node('Concat', [name+'_m1', name+'_sq', name+'_head_dim'], [name+'_v_shape'], axis=0),
         make_node('Reshape', [name+'_v_', name+'_v_shape'], [name+'_v']),
         make_node('MatMul', [input_nodes[1], name+'_v'], [name+'_matmul']),
+        make_node('Concat', [name+'_bs', name+'_m1', name+'_sq', name+'_head_dim'],
+                  [name+'_before_transpose'], axis=0),
         make_node('Reshape', [name+'_matmul', name+'_before_transpose'], [name+'_bt']),
         make_node('Transpose', [name+'_bt'], [name+'_transpose'], perm=[2, 0, 1, 3]),
         make_node('Reshape', [name+'_transpose', name+'_out_shape'], [name])
