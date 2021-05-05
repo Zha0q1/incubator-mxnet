@@ -362,10 +362,12 @@ def convert_fully_connected(node, **kwargs):
 
     nodes = []
     if 'dotproductselfattentioncell' in name:
-        create_tensor([12, 192, 768], name+'_interleaved_shape', kwargs['initializer'])
+        create_tensor([12, 192, 768], name+'_interleaved_w_shape', kwargs['initializer'])
+        create_tensor([12, 192], name+'_interleaved_b_shape', kwargs['initializer'])
         create_tensor([768, 768], name+'_w_shape', kwargs['initializer'])
+        create_tensor([768], name+'_b_shape', kwargs['initializer'])
         nodes += [
-            make_node('Reshape', [input_nodes[1], name+'_interleaved_shape'], [name+'_interleaved_w']),
+            make_node('Reshape', [input_nodes[1], name+'_interleaved_w_shape'], [name+'_interleaved_w']),
             make_node('Split', [name+'_interleaved_w'], [name+'_q_w_', name+'_k_w_', name+'_v_w_'], axis=1),
             make_node('Reshape', [name+'_q_w_', name+'_w_shape'], [name+'_q_w_reshaped']),
             make_node('Reshape', [name+'_k_w_', name+'_w_shape'], [name+'_k_w_reshaped']),
@@ -373,7 +375,11 @@ def convert_fully_connected(node, **kwargs):
             make_node('Transpose', [name+'_q_w_reshaped'], [name+'_q_w']),
             make_node('Transpose', [name+'_k_w_reshaped'], [name+'_k_w']),
             make_node('Transpose', [name+'_v_w_reshaped'], [name+'_v_w']),
-            make_node('Split', [input_nodes[2]], [name+'_q_b', name+'_k_b', name+'_v_b'], axis=0),
+            make_node('Reshape', [input_nodes[2], name+'_interleaved_b_shape'], [name+'_interleaved_b']),
+            make_node('Split', [name+'_interleaved_b'], [name+'_q_b_', name+'_k_b_', name+'_v_b_'], axis=1),
+            make_node('Reshape', [name+'_q_b_', name+'_b_shape'], [name+'_q_b']),
+            make_node('Reshape', [name+'_k_b_', name+'_b_shape'], [name+'_k_b']),
+            make_node('Reshape', [name+'_v_b_', name+'_b_shape'], [name+'_v_b']),
             make_node('MatMul', [input_nodes[0], name+'_q_w'], [name+'_q_']),
             make_node('MatMul', [input_nodes[0], name+'_k_w'], [name+'_k_']),
             make_node('MatMul', [input_nodes[0], name+'_v_w'], [name+'_v_']),
