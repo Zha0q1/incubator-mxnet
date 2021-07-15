@@ -315,19 +315,23 @@ def convert_arange_like(node, **kwargs):
     if opset_version < 11:
         raise AttributeError("ONNX opset 11 or greater is required to export this operator")
     # use the same dtype as the that of the input node
-    dtype = input_dtypes[0]
+    dtype = np.dtype('int32')
     dtype_t = onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[dtype]
     axis = attrs.get('axis', 'None')
-    start = attrs.get('start', 0.)
-    step = attrs.get('step', 1.)
+    start = float(attrs.get('start', 0.))
+    step = float(attrs.get('step', 1.))
     repeat = int(attrs.get('repeat', 1))
     if repeat != 1:
         raise NotImplementedError("arange_like operator with repeat != 1 not yet implemented.")
 
-    create_const_scalar_node(name+"_start", np.dtype(dtype).type(start), kwargs)
-    create_const_scalar_node(name+"_step", np.dtype(dtype).type(step), kwargs)
+    create_const_scalar_node(name+"_start", dtype.type(start), kwargs)
+    create_const_scalar_node(name+"_step", dtype.type(step), kwargs)
     create_const_scalar_node(name+"_half_step", np.dtype(dtype).type(float(step)*0.5), kwargs)
     create_tensor([0], name+"_0", kwargs["initializer"], dtype='int64')
+
+    dtype_true = input_dtypes[0]
+    dtype_true_t = onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[dtype_true]
+
     nodes = []
     if axis == 'None':
         # output will be same shape as input
@@ -340,7 +344,8 @@ def convert_arange_like(node, **kwargs):
             make_node("Add", [name+"_mul0_out", name+"_start"], [name+"_add1_out"]),
             make_node("Sub", [name+"_add1_out", name+"_half_step"], [name+"_sub0_out"]),
             make_node("Range", [name+"_start", name+"_sub0_out", name+"_step"], [name+"_range0_out"]),
-            make_node("Reshape", [name+"_range0_out", name+"_shape0_out"], [name], name=name)
+            make_node("Reshape", [name+"_range0_out", name+"_shape0_out"], [name+'_reshape']),
+            make_node('Cast', [name+'_reshape'], [name], to=dtype_true_t)
         ]
     else:
         # determine shape of axis
@@ -355,7 +360,8 @@ def convert_arange_like(node, **kwargs):
             make_node("Mul", [name+"_cast0_out", name+"_step"], [name+"_mul0_out"]),
             make_node("Add", [name+"_mul0_out", name+"_start"], [name+"_add1_out"]),
             make_node("Sub", [name+"_add1_out", name+"_half_step"], [name+"_sub0_out"]),
-            make_node("Range", [name+"_start", name+"_sub0_out", name+"_step"], [name], name=name)
+            make_node("Range", [name+"_start", name+"_sub0_out", name+"_step"], [name+'_range']),
+            make_node('Cast', [name+'_range'], [name], to=dtype_true_t)
         ]
 
     return nodes
